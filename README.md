@@ -25,6 +25,8 @@ behind a few windows that speak the language of the shop floor: pick lines or fa
 - **Cycle time** from the machine's dynamics.
 - **Tool library** with feeds and speeds per material.
 - **Postprocessor:** Heidenhain TNC plain language (`.H`), every setup on its own preset.
+- **Easy to extend with AI:** add your own functions and write the postprocessor for your
+  control with an AI coding assistant (see below).
 
 ## Installation
 
@@ -46,6 +48,23 @@ sets red/yellow selection colours (they mean something in AvangardeCam). Another
 workbench can be chosen again in *Edit → Preferences → General*.
 
 **Units:** set *Edit → Preferences → General → Units* to *Metric small parts & CNC* (mm, mm/min).
+
+## Extending with AI
+
+AvangardeCam is built so that an AI coding assistant (Claude Code, Codex, Copilot, ...) can
+work on it safely: every function lives in its own modules (`model/`, `engine/`, `ui/`) with
+its own tests, so a new one does not touch the others, and
+[ARCHITECTURE.md](ARCHITECTURE.md) describes how everything fits together.
+
+**Your own postprocessor:** a postprocessor only turns the finished, control-neutral program
+(`avangardecam/model/nc.py`) into text. Give the assistant
+`avangardecam/post/heidenhain.py` as the example, a few real programs from your machine as
+the target, and ask for `avangardecam/post/<your_control>.py` with tests like
+`avangardecam/tests/test_post.py`.
+
+> **Check every AI-written postprocessor before it cuts:** compare its output line by line
+> with programs you trust, run it in the machine's own simulation, then a dry run above the
+> part with reduced feed and rapid override.
 
 ## Tests
 
