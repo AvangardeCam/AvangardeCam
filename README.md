@@ -24,7 +24,11 @@ behind a few windows that speak the language of the shop floor: pick lines or fa
   Verify (stock against the model), collisions of rapid moves, holder and neck.
 - **Cycle time** from the machine's dynamics.
 - **Tool library** with feeds and speeds per material.
-- **Postprocessor:** Heidenhain TNC plain language (`.H`), every setup on its own preset.
+- **Postprocessor:** Heidenhain **TNC 620** plain language (`.H`), every setup on its own preset.
+  Made for and tested on a **Bridgeport V1000 with a TNC 620** (control dialog in Dutch, e.g.
+  `CYCL DEF 247 REF.PUNT VASTL.`). Other Heidenhain controls (TNC 640, 530, ...) and other
+  machines may need changes: the end of tool and park moves (`M91`) are set per machine in
+  `avangardecam/post/heidenhain.py`. Check the first programs carefully.
 - **Easy to extend with AI:** add your own functions and write the postprocessor for your
   control with an AI coding assistant (see below).
 
