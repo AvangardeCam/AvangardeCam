@@ -1,4 +1,4 @@
-# SPDX-License-Identifier: LGPL-2.1-or-later
+# SPDX-License-Identifier: MIT
 # AvangardeCam - a clear CAD/CAM interface that drives FreeCAD.
 """Heidenhain TNC plain language (Klartext, .H), written like the programs
 the shop runs on its machine (a TNC 620):

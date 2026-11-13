@@ -6,6 +6,7 @@
   <date>2026-11-13</date>
   <maintainer email="356371646+AvangardeCam@users.noreply.github.com">AvangardeCam</maintainer>
   <license file="LICENSE">LGPL-2.1-or-later</license>
+  <license file="avangardecam/post/LICENSE">MIT</license>
   <url type="repository" branch="main">https://github.com/AvangardeCam/AvangardeCam</url>
   <url type="bugtracker">https://github.com/AvangardeCam/AvangardeCam/issues</url>
   <url type="readme">https://github.com/AvangardeCam/AvangardeCam/blob/main/README.md</url>

@@ -10,6 +10,19 @@ behind a few windows that speak the language of the shop floor: pick lines or fa
 > **Status: beta.** It is used on real parts, but it is young. Always check the program in
 > the simulation and on the machine (dry run, reduced feed) before cutting.
 
+## Why AvangardeCam
+
+**From a CNC programmer, for CNC programmers.** AvangardeCam was made on a shop floor, for
+the work that really happens there.
+
+The idea: **everyone can add the functions they need**, with the help of AI, to make their
+own work better and easier. The code is built for it: small modules, tests, a clear map.
+
+- **Free.** No expensive licences, no subscriptions, no seat limits.
+- **Yours to change.** Use it, adapt it, share it, under the LGPL-2.1.
+- **Your postprocessors are fully yours** (MIT): write one for your machine and keep it,
+  share it or sell it.
+
 ## Features
 
 - **Setups and zero points:** several setups per part, Snap-0-Point on a face, zero rotated
@@ -86,5 +99,8 @@ GitHub.
 
 ## License
 
-[LGPL-2.1-or-later](LICENSE), like FreeCAD. It comes **without any warranty**: you are
-responsible for every program you run on a machine.
+- AvangardeCam: [LGPL-2.1-or-later](LICENSE), like FreeCAD.
+- Postprocessors (`avangardecam/post/`): [MIT](avangardecam/post/LICENSE), so a postprocessor
+  you make from them is yours to keep, share or sell.
+
+Both come **without any warranty**: you are responsible for every program you run on a machine.
