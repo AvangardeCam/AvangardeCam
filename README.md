@@ -66,6 +66,11 @@ workbench can be chosen again in *Edit → Preferences → General*.
 
 **Units:** set *Edit → Preferences → General → Units* to *Metric small parts & CNC* (mm, mm/min).
 
+## Manual
+
+A step-by-step [manual](docs/manual/README.md) with screenshots takes one part from the
+3D model to the `.H` program, in two clampings ([Polish version](docs/manual/README.pl.md)).
+
 ## Extending with AI
 
 AvangardeCam is built so that an AI coding assistant (Claude Code, Codex, Copilot, ...) can
