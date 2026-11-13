@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="400" viewBox="0 0 560 400" role="img" aria-label="Contour tooling: the tool beside the lines, from Start Z down to Z-Depth">
+<title>Contour tooling</title>
+<g id="part" aria-label="The part; its contour lines in orange">
+  <path d="M 150 260 L 410 260 L 450 231.4 L 190 231.4 Z" fill="#FFE0C9"/>
+  <path d="M 150 260 L 410 260 L 410 310 L 150 310 Z" fill="#F5BF9A" opacity="0.75"/>
+  <path d="M 410 260 L 520 181.4 L 520 231.4 L 410 310 Z" fill="#EDAE7F" opacity="0.60"/>
+  <path d="M 190 161.4 L 450 161.4 L 520 111.4 L 260 111.4 Z" fill="#FFE0C9"/>
+  <path d="M 190 161.4 L 450 161.4 L 450 231.4 L 190 231.4 Z" fill="#F5BF9A" opacity="0.75"/>
+  <path d="M 450 161.4 L 520 111.4 L 520 181.4 L 450 231.4 Z" fill="#EDAE7F" opacity="0.60"/>
+  <path d="M 150 260 V 310 H 410 L 520 231.4 V 111.4 L 260 111.4 L 190 161.4 V 231.4 L 150 260 H 410 L 450 231.4 H 190 M 410 260 V 310 M 450 231.4 V 161.4" fill="none" stroke="#C87949" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M 190 161.4 H 450 L 520 111.4" fill="none" stroke="#EB864A" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/>
+</g>
+<g id="cut" aria-label="The material the tool takes away">
+  <path d="M 150 260 V 190 H 410 V 260 M 150 190 L 190 161.4 M 410 190 L 450 161.4" fill="none" stroke="#9AA7B6" stroke-width="2" stroke-dasharray="7 6" stroke-linecap="round"/>
+</g>
+<g id="direction" aria-label="Direction of the lines">
+  <path d="M 345 146 H 236" stroke="#138A91" stroke-width="7" fill="none" stroke-linecap="round"/>
+  <path d="M 255 130 L 234 146 L 255 162" stroke="#138A91" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</g>
+<g id="levels" aria-label="Start Z and Z-Depth" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="22" font-weight="600" fill="#68788B">
+  <path d="M 118 161.4 H 184 M 118 231.4 H 184" stroke="#728296" stroke-width="2" stroke-dasharray="5 5" fill="none"/>
+  <path d="M 130 168 V 225 M 122 176 L 130 164 L 138 176 M 122 217 L 130 229 L 138 217" stroke="#728296" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="112" y="169" text-anchor="end">Start Z</text>
+  <text x="112" y="239" text-anchor="end">Z-Depth</text>
+</g>
+<g id="tool" aria-label="The tool beside the lines">
+  <path d="M 352 74 V 164 A 20 8 0 0 0 392 164 V 74 Z" fill="#C9D3DE" stroke="#728296" stroke-width="3"/>
+  <ellipse cx="372" cy="74" rx="20" ry="8" fill="#E3E9F0" stroke="#728296" stroke-width="3"/>
+  <path d="M 352 164 V 244 A 20 8 0 0 0 392 244 V 164 A 20 8 0 0 1 352 164 Z" fill="#8A9AAD" stroke="#5E6E82" stroke-width="3"/>
+  <path d="M 354 188 L 390 172 M 354 212 L 390 196 M 354 236 L 390 220" stroke="#5E6E82" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+</g>
+</svg>

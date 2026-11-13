@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <!-- a path the tool has gone along, the rest pale -->
+  <path d="M6 54 L6 40 L22 40 L22 26 L40 26" fill="none" stroke="#4e9a06" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M40 26 L40 12 L58 12" fill="none" stroke="#babdb6" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="4 4"/>
+  <!-- the tool -->
+  <rect x="35" y="2" width="10" height="12" fill="#888a85" stroke="#2e3436" stroke-width="1.5"/>
+  <rect x="36" y="13" width="8" height="13" fill="#f0a020" stroke="#2e3436" stroke-width="1.5"/>
+  <!-- play -->
+  <circle cx="44" cy="46" r="15" fill="#3465a4" stroke="#2e3436" stroke-width="2"/>
+  <path d="M39 38 L39 54 L53 46 Z" fill="#ffffff"/>
+</svg>

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="400" viewBox="0 0 560 400" role="img" aria-label="Góra i dół kolejno w każdej kolumnie">
+<title>Operacja konturu ze stepover — strategia naprzemienna</title>
+<g id="siatka-przejsc" stroke-linejoin="miter">
+<rect x="105" y="119" width="94" height="81" fill="#F8FBFE" stroke="none"/>
+<rect x="199" y="119" width="94" height="81" fill="#F8FBFE" stroke="none"/>
+<rect x="293" y="119" width="94" height="81" fill="#F8FBFE" stroke="none"/>
+<rect x="105" y="200" width="94" height="81" fill="#EFF5F9" stroke="none"/>
+<rect x="199" y="200" width="94" height="81" fill="#EFF5F9" stroke="none"/>
+<rect x="293" y="200" width="94" height="81" fill="#EFF5F9" stroke="none"/>
+<rect x="105" y="119" width="282" height="162" fill="none" stroke="#728296" stroke-width="3.2"/>
+<path d="M 199 119 V 281" fill="none" stroke="#728296" stroke-width="3.2"/>
+<path d="M 293 119 V 281" fill="none" stroke="#728296" stroke-width="3.2"/>
+<path d="M 105 200 H 387" fill="none" stroke="#728296" stroke-width="3.2"/>
+</g>
+<text x="152.0" y="160.5" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="39" font-weight="600" fill="#1D324A" text-anchor="middle" dominant-baseline="central">1</text>
+<text x="246.0" y="160.5" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="39" font-weight="600" fill="#1D324A" text-anchor="middle" dominant-baseline="central">3</text>
+<text x="340.0" y="160.5" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="39" font-weight="600" fill="#1D324A" text-anchor="middle" dominant-baseline="central">5</text>
+<text x="152.0" y="241.5" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="39" font-weight="600" fill="#1D324A" text-anchor="middle" dominant-baseline="central">2</text>
+<text x="246.0" y="241.5" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="39" font-weight="600" fill="#1D324A" text-anchor="middle" dominant-baseline="central">4</text>
+<text x="340.0" y="241.5" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="39" font-weight="600" fill="#1D324A" text-anchor="middle" dominant-baseline="central">6</text>
+<path d="M 61 124 V 273" stroke="#138A91" stroke-width="7" fill="none" stroke-linecap="round"/>
+<path d="M 44 252 L 61 275 L 78 252" stroke="#138A91" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+<g id="krawedzie-detalu" aria-label="Kontur detalu z głębokością w widoku 3D">
+  <!-- Uproszczona aksonometria: krótka głębokość przesunięta w prawo i ku górze -->
+  <g id="plaszczyzny-glebokosci" stroke="none">
+    <path d="M 107 330 L 447 330 L 469 310 L 129 310 Z" fill="#F5BF9A" opacity="0.75"/>
+    <path d="M 447 96 L 447 330 L 469 310 L 469 76 Z" fill="#EDAE7F" opacity="0.60"/>
+    <path d="M 447 96 L 518 96 L 540 76 L 469 76 Z" fill="#FFE0C9"/>
+    <path d="M 107 330 L 107 374 L 129 354 L 129 310 Z" fill="#FFD6BA" opacity="0.85"/>
+  </g>
+  <!-- Tylna krawędź, łączniki narożników i najważniejszy obrys przedni -->
+  <path d="M 540 76 H 469 V 310 H 129 V 354" fill="none" stroke="#C87949" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M 518 96 L 540 76 M 447 96 L 469 76 M 447 330 L 469 310 M 107 330 L 129 310 M 107 374 L 129 354" fill="none" stroke="#C87949" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M 518 96 H 447 V 330 H 107 V 374" fill="none" stroke="#EB864A" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/>
+</g></svg>

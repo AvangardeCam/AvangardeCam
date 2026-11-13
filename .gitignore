@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+*.FCBak
+*.FCStd1
+# parts and programs of real work never go here
+*.FCStd
+*.H
+*.h
+!tests_gui/models/*

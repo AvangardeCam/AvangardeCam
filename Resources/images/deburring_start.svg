@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="400" viewBox="0 0 560 400" role="img" aria-label="Deburring: the chamfer mill on the edge, its tip below the chamfer, its centre beside the lines">
+<title>Deburring</title>
+<g id="part" aria-label="The part in section; the edge of its lines in orange">
+  <path d="M 40 200 H 260 L 300 240 V 390 H 40 Z" fill="#F5BF9A" opacity="0.75"/>
+  <path d="M 40 200 H 260 L 300 240 V 390" fill="none" stroke="#C87949" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+</g>
+<g id="tool" aria-label="The chamfer mill">
+  <path d="M 238 40 H 438 V 178 H 238 Z" fill="#C9D3DE" stroke="#728296" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M 238 178 H 438 L 346 270 H 330 Z" fill="#8A9AAD" fill-opacity="0.55" stroke="#5E6E82" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M 338 26 V 282" stroke="#5E6E82" stroke-width="2" stroke-dasharray="14 5 3 5" fill="none"/>
+</g>
+<g id="cut" aria-label="The chamfer the tool takes away">
+  <path d="M 260 200 H 300 V 240" fill="none" stroke="#4A5868" stroke-width="2" stroke-dasharray="6 5" stroke-linecap="round"/>
+  <circle cx="300" cy="200" r="7" fill="#EB864A"/>
+</g>
+
+<g id="sizes" aria-label="Chamfer, Tip below chamfer, XY offset and Z-Depth" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-size="18" font-weight="600" fill="#68788B">
+  <path d="M 260 205 V 272 M 300 270 H 324 M 330 270 H 478 M 422 200 H 478 M 300 240 H 324 M 300 300 V 345 M 338 300 V 345" stroke="#728296" stroke-width="1.5" stroke-dasharray="4 4" fill="none"/>
+  <path d="M 264 262 H 296 M 270 256 L 262 262 L 270 268 M 290 256 L 298 262 L 290 268" stroke="#728296" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="252" y="268" text-anchor="end">Chamfer</text>
+  <path d="M 315 244 V 266 M 309 251 L 315 243 L 321 251 M 309 259 L 315 267 L 321 259" stroke="#728296" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="318" y="300" text-anchor="middle">Tip below chamfer</text>
+  <path d="M 304 335 H 334 M 310 329 L 302 335 L 310 341 M 328 329 L 336 335 L 328 341" stroke="#728296" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="319" y="366" text-anchor="middle">XY offset</text>
+  <path d="M 465 204 V 266 M 459 212 L 465 202 L 471 212 M 459 258 L 465 268 L 471 258" stroke="#728296" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="474" y="241" text-anchor="start">Z-Depth</text>
+</g>
+</svg>
