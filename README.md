@@ -30,13 +30,15 @@ behind a few windows that speak the language of the shop floor: pick lines or fa
 
 Needs **FreeCAD 1.1** or newer (Windows, Linux, macOS).
 
-1. Download this repository (green *Code* button → *Download ZIP*) or `git clone` it.
-2. Put the folder, named `AvangardeCam`, into FreeCAD's `Mod` folder:
-   - Windows: `%APPDATA%\FreeCAD\Mod\`
-   - Linux: `~/.local/share/FreeCAD/Mod/` (Flatpak: `~/.var/app/org.freecad.FreeCAD/data/FreeCAD/Mod/`)
-   - macOS: `~/Library/Application Support/FreeCAD/Mod/`
+1. Download this repository (green *Code* button → *Download ZIP*) and unpack it, or `git clone` it.
+2. Rename the folder to `AvangardeCam` (the ZIP gives `AvangardeCam-main`) and put it into
+   FreeCAD's `Mod` folder (create `Mod` if it is not there yet):
+   - Windows: `%APPDATA%\FreeCAD\v1-1\Mod\`
+   - Linux: `~/.local/share/FreeCAD/v1-1/Mod/` (Flatpak: `~/.var/app/org.freecad.FreeCAD/data/FreeCAD/v1-1/Mod/`)
+   - macOS: `~/Library/Application Support/FreeCAD/v1-1/Mod/`
 
-   FreeCAD shows the exact folder in the Python console: `App.getUserAppDataDir()`.
+   FreeCAD shows its folder in the Python console: `App.getUserAppDataDir()`.
+   The files must lie directly in it, e.g. `...\FreeCAD\v1-1\Mod\AvangardeCam\InitGui.py`.
 3. Restart FreeCAD.
 
 On its first start AvangardeCam becomes FreeCAD's start workbench, hides the Start page and
