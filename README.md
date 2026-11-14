@@ -49,9 +49,10 @@ own work better and easier. The code is built for it: small modules, tests, a cl
 
 Needs **FreeCAD 1.1** or newer (Windows, Linux, macOS).
 
-1. Download this repository (green *Code* button → *Download ZIP*) and unpack it, or `git clone` it.
-2. Rename the folder to `AvangardeCam` (the ZIP gives `AvangardeCam-main`) and put it into
-   FreeCAD's `Mod` folder (create `Mod` if it is not there yet):
+1. Download **[AvangardeCam.zip](https://github.com/AvangardeCam/AvangardeCam/releases/latest/download/AvangardeCam.zip)**
+   (the latest release) and unpack it. It contains one folder, `AvangardeCam`.
+2. Put the `AvangardeCam` folder into FreeCAD's `Mod` folder (create `Mod` if it is not
+   there yet):
    - Windows: `%APPDATA%\FreeCAD\v1-1\Mod\`
    - Linux: `~/.local/share/FreeCAD/v1-1/Mod/` (Flatpak: `~/.var/app/org.freecad.FreeCAD/data/FreeCAD/v1-1/Mod/`)
    - macOS: `~/Library/Application Support/FreeCAD/v1-1/Mod/`
@@ -59,6 +60,9 @@ Needs **FreeCAD 1.1** or newer (Windows, Linux, macOS).
    FreeCAD shows its folder in the Python console: `App.getUserAppDataDir()`.
    The files must lie directly in it, e.g. `...\FreeCAD\v1-1\Mod\AvangardeCam\InitGui.py`.
 3. Restart FreeCAD.
+
+Developers can `git clone` the repository instead (the folder must be named `AvangardeCam`);
+the green *Code → Download ZIP* gives `AvangardeCam-main`, which must be renamed.
 
 On its first start AvangardeCam becomes FreeCAD's start workbench, hides the Start page and
 sets red/yellow selection colours (they mean something in AvangardeCam). Another start
