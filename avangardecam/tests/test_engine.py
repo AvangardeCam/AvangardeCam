@@ -1835,7 +1835,7 @@ class TestEngine(unittest.TestCase):
         self.assertLess(conventional, 0.01 * (conventional + climb), "climb milling")
 
     def test_adaptive_floor_level_arcs_meeting_in_the_stock(self):
-        """The mounting plate D: two pockets 3.5 deep
+        """A demo plate: two pockets 3.5 deep
         open to the end of the plate, their floors' corners there 15.5
         apart, the stock 5 mm longer; a Ø6 tool. Around the floors (grown
         by 1.5 x Ø and Finish XY on their own level) the arcs met 0.04 mm

@@ -395,7 +395,7 @@ def _out_of_stock(region, stock, models, reach_mm):
 
     The two go together as one face (_joining), else the area stays as it
     was: libarea then has no room to come in beside the stock. On the
-    mounting plate D (two pockets 3.5 deep open to the
+    demo plate (two pockets 3.5 deep open to the
     end of the plate, 5 mm of stock beyond it, a Ø6 tool) it cleared
     nothing in them and gave its finishing pass only, 70 mm away from
     where the tool went down, across the rib between them (_joined)."""
@@ -430,7 +430,7 @@ def _joining(region, more, models):
     libarea takes two faces touching each other for nothing to clear, so
     first FreeCAD's fusion: it keeps the stock's outline as an edge
     between two faces, joined again by DraftGeomUtils.concatenate. On the
-    mounting plate D, the arcs around two floors met
+    demo plate, the arcs around two floors met
     0.04 mm in the stock and two faces stayed: then libarea's own
     (Path.Area, Clipper: 1.6 µm off the faces at its accuracy) puts them
     together, with a hole 0.06 x 0.04 mm where each arc came in; the tool
@@ -670,7 +670,7 @@ def _joined(obj, start, paths, jump_mm):
     user's plate, 0.1 after a way over cleared floor), and FreeCAD's own
     Adaptive feeds straight to each one. But when libarea clears nothing
     in an area it gives the finishing pass only, wherever that starts: on
-    the mounting plate D 70 mm from where the tool
+    the demo plate 70 mm from where the tool
     went down, across the rib between two pockets, 3.4 mm into the top of
     the part."""
     result = []
