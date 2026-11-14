@@ -106,8 +106,8 @@ Bugs and ideas for the program: [GitHub issues](https://github.com/AvangardeCam/
 ## Support
 
 AvangardeCam is free and stays free, postprocessors included.
-If it saves you time, you can support its development via
-[GitHub Sponsors](https://github.com/sponsors/AvangardeCam).
+If it saves you time, you can support its development:
+[Buy Me a Coffee](https://buymeacoffee.com/srebrzystyi).
 
 ## License
 
