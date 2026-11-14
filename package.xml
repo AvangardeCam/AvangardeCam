@@ -4,7 +4,7 @@
   <description>A clear CAM interface for FreeCAD: setups and zero points, contour, drilling, thread milling, helix, slot, facing, adaptive clearing, deburring, stock simulation and a Heidenhain TNC postprocessor.</description>
   <version>0.1.0</version>
   <date>2026-11-13</date>
-  <maintainer email="356371646+AvangardeCam@users.noreply.github.com">AvangardeCam</maintainer>
+  <maintainer email="AvangardeCam@proton.me">AvangardeCam</maintainer>
   <license file="LICENSE">LGPL-2.1-or-later</license>
   <license file="avangardecam/post/LICENSE">MIT</license>
   <url type="repository" branch="main">https://github.com/AvangardeCam/AvangardeCam</url>

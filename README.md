@@ -93,14 +93,21 @@ the target, and ask for `avangardecam/post/<your_control>.py` with tests like
 See [tests_gui/README.md](tests_gui/README.md): over 300 engine tests run in `FreeCADCmd`,
 the GUI tests in a real FreeCAD window on the demo model `tests_gui/models/demo_bridge.step`.
 
+## Training and consulting
+
+Remote consulting and training in **English and Polish**: AvangardeCam and FreeCAD CAM,
+Heidenhain TNC programming, writing a postprocessor for your machine, AI-assisted
+("vibe coding") CNC courses for schools.
+
+Contact: **[AvangardeCam@proton.me](mailto:AvangardeCam@proton.me)**
+
+Bugs and ideas for the program: [GitHub issues](https://github.com/AvangardeCam/AvangardeCam/issues).
+
 ## Support
 
 AvangardeCam is free and stays free, postprocessors included.
 If it saves you time, you can support its development via
 [GitHub Sponsors](https://github.com/sponsors/AvangardeCam).
-
-Training and remote consulting (CAM, Heidenhain programming, CNC in schools): contact via
-GitHub.
 
 ## License
 
