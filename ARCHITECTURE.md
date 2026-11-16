@@ -63,6 +63,26 @@ Rotate 0-Point turns it around Z, Next setup starts a setup from the stock the p
 leaves. The 3D view shows the part as it lies in the **active setup** (a `SoTransform` on top
 of the scene), so FreeCAD's NaviCube and the Top/Front views are the machine's views.
 
+### Zero points of operations (experimental)
+
+A setup has a **default zero point** (the machine's preset) and an **active** one, which Move
+0-Point moves away from it (onto a wall, by a typed shift; with 5 axes it turns). **Each
+operation counts from the zero point it was made on and keeps it.** FreeCAD computes a Job
+on one zero point, so `engine/op_zero.py` works on one at a time: the operations of another
+zero point are *parked* (their zero point in `AvangardeZero`, their path kept; a guard on
+FreeCAD's `ObjectOp.execute` keeps FreeCAD from computing them on the wrong zero point) and
+come alive when their zero point is made the active one (`activate`: Make 0-Point active,
+Reset 0-Point, or editing them). The stock stays the same block. A setup whose zero point was
+never moved away has none of this and works as before. Snap-0-Point and Rotate 0-Point move
+the setup itself (its default zero point with what counts from it) and start from the default.
+
+For the NC program `op_zero.setup_program` visits each zero point, reads its operations there
+and comes back (a dropped transaction: no undo step). `freecad_cam.nc_program(zeros=True)`
+gives each operation its zero point from the preset (`Operation.zero`: origin and axes) for a
+postprocessor that shifts and tilts; without `zeros` every operation is in the preset's
+coordinates, as Play, Verify and the cycle time run a setup, and an operation on a tilted
+zero point is left out there (said in the report view).
+
 ## Simulation and checking
 
 - `stocklab/`: material removal on a tri-dexel grid (numpy, no FreeCAD), used by **Play**
@@ -99,6 +119,12 @@ docs/notes-pl.md      full design notes (Polish)
 ```
 
 ## Adding a postprocessor
+
+One postprocessor for each machine, each in its own file, listed in `post/machines.py` (the
+export window offers them as file types): `post/heidenhain.py` for the Bridgeport V1000 (3
+axes; a shifted zero point as `CYCL DEF 7`, a turned one refused) and, experimental,
+`post/soraluce.py` for a machine that turns its head (`CYCL DEF 7`, `PLANE SPATIAL`, the
+machine's head cycle and the labels RESET, FREE, HEAD0 around every operation).
 
 Copy the shape of `post/heidenhain.py`: a `write(program, machine) -> str` that walks the
 `Program` of `model/nc.py` (its `Setup`s, their `Operation`s with a `Tool`, the `Move`s and

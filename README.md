@@ -12,6 +12,12 @@ Website: **[avangardecam.eu](https://avangardecam.eu)** (videos, training, rates
 > **Status: beta.** It is used on real parts, but it is young. Always check the program in
 > the simulation and on the machine (dry run, reduced feed) before cutting.
 
+> **This is the `experimental` branch.** It adds zero points of operations (Move 0-Point with
+> 5 axes, Set 0-Point as default, Reset 0-Point, Make 0-Point active) and a second
+> postprocessor for a machine with a turning head. **None of it has run on a machine yet.**
+> The tested version is the [`main`](https://github.com/AvangardeCam/AvangardeCam/tree/main)
+> branch and its releases.
+
 ## Why AvangardeCam
 
 **From a CNC programmer, for CNC programmers.** AvangardeCam was made on a shop floor, for
@@ -27,8 +33,8 @@ own work better and easier. The code is built for it: small modules, tests, a cl
 
 ## Features
 
-- **Setups and zero points:** several setups per part, Snap-0-Point on a face, zero rotated
-  around Z, next setup from the stock the previous one leaves.
+- **Setups and zero points:** several setups per part, Snap-0-Point on a face, zero moved onto
+  a wall or by a typed distance, rotated around Z, next setup from the stock the previous one leaves.
 - **Stock:** allowances or exact size, the model in the middle.
 - **Operations:** Contour tooling (compensation RL/RR, approach arcs, passes in XY and Z,
   ramps, start/end of the contour), Drilling (cycle 205, depth from the 3D model),
@@ -44,6 +50,13 @@ own work better and easier. The code is built for it: small modules, tests, a cl
   `CYCL DEF 247 REF.PUNT VASTL.`). Other Heidenhain controls (TNC 640, 530, ...) and other
   machines may need changes: the end of tool and park moves (`M91`) are set per machine in
   `avangardecam/post/heidenhain.py`. Check the first programs carefully.
+- **Experimental (this branch, not run on a machine yet):** each operation keeps the zero
+  point it was made on. **Move 0-Point** moves the zero point (onto a wall, by a distance)
+  and with **5 axes** turns it (Z out of a wall, or by angles about X, Y, Z); **Set 0-Point
+  as default**, **Reset 0-Point** and **Make 0-Point active** (an operation's menu) go
+  between them. One postprocessor for each machine, chosen in the export window: the
+  Bridgeport V1000 one writes a shifted zero point as `CYCL DEF 7`, the **Soraluce T35** one
+  (turning head) writes every operation with `CYCL DEF 7`, `PLANE SPATIAL` and the head cycle.
 - **Easy to extend with AI:** add your own functions and write the postprocessor for your
   control with an AI coding assistant (see below).
 

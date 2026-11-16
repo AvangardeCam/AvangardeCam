@@ -25,6 +25,7 @@ from avangardecam import tr
 from avangardecam.engine import freecad_cam as cam
 from avangardecam.ui import activate_geometry, cycle_time, delete_operation, details, operation_order, picking, scene, sketch_visibility
 from avangardecam.ui import next_setup as ui_next_setup
+from avangardecam.ui import op_zero as ui_op_zero
 
 KIND_ROLE = QtCore.Qt.UserRole
 NAME_ROLE = QtCore.Qt.UserRole + 1
@@ -290,6 +291,8 @@ class ProjectPanel(QtWidgets.QWidget):
             marks.append(tr("off"))
         if scene.hidden(op):
             marks.append(tr("hidden"))
+        if ui_op_zero.parked(op):
+            marks.append(tr("other 0-Point"))
         if marks:
             item.setText(0, "{}  ({})".format(op.Label, ", ".join(marks)))
             item.setForeground(0, item.treeWidget().palette().brush(QtGui.QPalette.Disabled, QtGui.QPalette.Text))
@@ -410,7 +413,9 @@ class ProjectPanel(QtWidgets.QWidget):
                 if t.controller is obj:
                     view = details.ToolView(job, t)
         elif kind == OPERATION and obj is not None:
-            if _deburring_of(obj) is not None:
+            if ui_op_zero.parked(obj):  # its values wait until its zero point is the active one
+                view = ui_op_zero.ParkedView(obj)
+            elif _deburring_of(obj) is not None:
                 from avangardecam.ui.deburring import DeburringView
 
                 view = DeburringView(obj)
@@ -529,7 +534,7 @@ def _deburring_of(op):
 
 
 def operation_menu(op, parent=None):
-    """Edit..., Activate geometry, Switch off (on), Hide in 3D (Show in 3D), Delete of an operation."""
+    """Edit..., Activate geometry, Make 0-Point active, Switch off (on), Hide in 3D (Show in 3D), Delete of an operation."""
     from avangardecam import handlers
 
     menu = QtWidgets.QMenu(parent)
@@ -541,6 +546,7 @@ def operation_menu(op, parent=None):
     edit.setToolTip(tr("Change it in the window it was made in"))
     edit.triggered.connect(lambda: handlers.edit_operation(op))
     activate_geometry.add_to_menu(menu, op)
+    ui_op_zero.add_to_menu(menu, op)
     on = bool(op.Active)
     switch = menu.addAction(tr("Switch off") if on else tr("Switch on"))
     switch.setObjectName("AvangardeCamSwitchOperation")

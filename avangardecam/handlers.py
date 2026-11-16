@@ -98,11 +98,13 @@ def import_step(path=None):
     return path
 
 
-def export_nc(path=None):
-    """The project as one Heidenhain TNC program (.H): every setup on its own
-    preset. Without a path a file dialog asks for one; returns the path
-    written or None."""
-    from avangardecam.post import heidenhain
+def export_nc(path=None, post=None):
+    """The project as one Heidenhain program (.H): every setup on its own
+    preset, written by the postprocessor of one machine (post.machines).
+    Without a path a file dialog asks for the file and the machine; with
+    one and no postprocessor, the one chosen last writes it. Returns the
+    path written or None."""
+    from avangardecam.ui import postprocessors
 
     doc = FreeCAD.ActiveDocument
     if _models_or_say(doc) is None:
@@ -111,30 +113,25 @@ def export_nc(path=None):
         _status(tr("Add an operation first (CAM > Contour tooling)."))
         return None
     if path is None:
-        from PySide import QtWidgets
-
-        stem = os.path.splitext(os.path.basename(doc.FileName))[0] if doc.FileName else doc.Label
-        folder = params().GetString("LastExportDir", os.path.dirname(doc.FileName) or os.path.expanduser("~"))
-        path, _filter = QtWidgets.QFileDialog.getSaveFileName(
-            FreeCADGui.getMainWindow(),
-            tr("Export NC program"),
-            os.path.join(folder, heidenhain.program_name(stem) + heidenhain.EXTENSION),
-            tr("Heidenhain TNC plain language") + " (*.H *.h)",
-        )
-        if not path:
+        asked = postprocessors.ask(doc)
+        if asked is None:
             return None
-    if os.path.splitext(path)[1].upper() != heidenhain.EXTENSION:
-        path += heidenhain.EXTENSION
-    name = heidenhain.program_name(os.path.splitext(os.path.basename(path))[0])
+        path, post = asked
+    post = post or postprocessors.last()
+    module = post.module
+    if os.path.splitext(path)[1].upper() != module.EXTENSION:
+        path += module.EXTENSION
+    name = module.program_name(os.path.splitext(os.path.basename(path))[0])
     doc.recompute()
     try:
-        text = heidenhain.write(cam.nc_program(doc, name, doc.Label))
-        heidenhain.save(text, path)
+        text = post.write(cam.nc_program(doc, name, doc.Label, zeros=True))
+        module.save(text, path)
     except (cam.ProjectError, ValueError, OSError) as exc:
         _error(str(exc))
         return None
     params().SetString("LastExportDir", os.path.dirname(path))
-    _status(tr("NC program saved: {}").format(path))
+    postprocessors.remember(post)
+    _status(tr("NC program saved: {} ({})").format(path, tr(post.label)))
     return path
 
 
@@ -415,6 +412,27 @@ def snap_zero():
     FreeCADGui.Selection.clearSelection()
     scene.set_active_setup(job)
     _select("setup", job.Name)
+
+
+def move_zero():
+    """CAM > Move 0-Point (ui.move_zero, on its own)."""
+    from avangardecam.ui import move_zero as ui_move_zero
+
+    return ui_move_zero.run()
+
+
+def set_default_zero():
+    """CAM > Set 0-Point as default (ui.op_zero, on its own)."""
+    from avangardecam.ui import op_zero as ui_op_zero
+
+    return ui_op_zero.set_default()
+
+
+def reset_zero():
+    """CAM > Reset 0-Point (ui.op_zero, on its own)."""
+    from avangardecam.ui import op_zero as ui_op_zero
+
+    return ui_op_zero.reset()
 
 
 def _rotate_zero(degrees):
@@ -875,6 +893,10 @@ def change_tool(op):
     from avangardecam.engine import deburring as engine_deburring
     from avangardecam.ui import deburring as ui_deburring
 
+    from avangardecam.ui import op_zero as ui_op_zero
+
+    if not ui_op_zero.ready(op):
+        return
     job = cam.setup_of(op)
     only = None  # the operation's kind of tools only (switchable)
     if engine_deburring.deburring_of(op) is not None:
@@ -936,6 +958,10 @@ def edit_operation(op):
     from avangardecam.ui.drilling_dialog import DrillingDialog, holes_text, picked_text
     from avangardecam.ui.thread_dialog import ThreadMillingDialog
 
+    from avangardecam.ui import op_zero as ui_op_zero
+
+    if not ui_op_zero.ready(op):
+        return
     job = cam.setup_of(op)
     from avangardecam.engine import deburring as engine_deburring
     from avangardecam.ui import deburring as ui_deburring

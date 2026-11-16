@@ -124,6 +124,73 @@ współrzędnych dla operacji. Dlatego:
   tym samym blokiem — wcześniej naddatki zostawały przy osiach i blok 303 × 96 (X ±1,5,
   Y ±1,75) po obrocie robił się 303,5 × 95,5 (płyta testowa A). Przy innym kącie
   naddatki zostają przy osiach jak dotąd.
+- **Move 0-Point** (CAM > Setup, duża ikona obok Snap-0-Point; `model/move_zero.py`,
+  `engine/move_zero.py`, `ui/move_zero.py`, własne testy): zero zmienia miejsce (z opcją
+  „5 axes” także kierunek osi, patrz niżej).
+  Okno nie blokuje widoku 3D. Przesunięcie to X, Y, Z w mm wzdłuż osi mocowania, ze znakiem
+  jak w przesunięciu punktu zerowego sterowania (X+476,5 = zero 476,5 mm dalej w X). **Select
+  wall** + klik w płaską ścianę: zero idzie najkrótszą drogą na płaszczyznę ściany (rzut
+  prostopadły, `to_plane`), więc ściana prostopadła do X zmienia tylko X, a pozostałe pola
+  zostają; liczone od miejsca już wybranego w polach, więc druga i trzecia ściana dają
+  narożnik, a ta sama ściana drugi raz nic nie zmienia. Ściana zaznaczona przed kliknięciem
+  ikony jest brana od razu (jak przy Snap). Ściana nie zostaje zaznaczona. Walec = odmowa,
+  przycisk czeka dalej. Zaznaczenie czytane 50 ms po kliknięciu (po `picking`, który klik w
+  krawędź ze szkicem przenosi na linię szkicu).
+  Podgląd: krzyż osi w miejscu docelowym i żółta linia od obecnego zera, rysowane w węźle
+  Joba (czyli w układzie mocowania), bez testu głębi, nieklikalne; znikają przy OK/Cancel.
+  OK = `engine.move_zero.move` w jednej transakcji „Move 0-Point”. Brak przesunięcia i
+  obrotu = bez kroku undo. Limit 10 m na oś (literówki).
+- **Zera operacji (EKSPERYMENTALNE, gałąź `experimental`, nie puszczone na maszynie)**
+  (`model/op_zero.py`, `engine/op_zero.py`, `ui/op_zero.py`, `tests/test_op_zero.py`,
+  `tests_gui/test_op_zero.py`). Decyzja usera (2026-11-16): operacja liczy od zera, na którym
+  powstała, i przy nim zostaje; zero jest „kursorem”. Mocowanie ma **zero domyślne** (preset
+  maszyny, `AvangardeDefaultZero`) i **zero aktywne** (tam leżą klony modelu).
+  - FreeCAD liczy Joba na jednym zerze, więc pracujemy na jednym naraz. Operacje z innego
+    zera są **zaparkowane**: `AvangardeZero` (placement w układzie detalu) + `AvangardeParked`.
+    FreeCAD 1.1.4 nie ma `freeze()` z Pythona, więc strażnik siedzi na
+    `Path.Op.Base.ObjectOp.execute` (`op_zero.install`): zaparkowana operacja nie jest
+    przeliczana i trzyma ścieżkę z własnego układu. Uwaga: FreeCAD zapamiętuje metody proxy
+    w chwili przypisania, więc dla operacji sprzed instalacji strażnika trzeba `op.Proxy =
+    op.Proxy` (`_guarded`). Właściwości są w pliku i w transakcjach, więc Undo i zapis działają.
+  - `activate(job, place)`: parkuje żywe, ożywia operacje tego zera (`touch`, bo narzędzie
+    albo stock mogły się zmienić), przestawia klony, dopasowuje stock, `_sync_operations`
+    (pomija zaparkowane). Wołają to: Move 0-Point, Reset 0-Point, Make 0-Point active
+    (menu operacji), Edit / Change tool na operacji z innego zera.
+  - **Stock zostaje tym samym blokiem**: przy wyjściu z zera domyślnego zapamiętywany jest
+    blok w jego układzie (`AvangardeBlock`, naddatki w `AvangardeDefaultStock`); na innym
+    zerze stock to pudełko opisane na tym bloku (dokładnie ten sam blok przy obrotach co
+    90°, większe pudełko przy innych kątach). Zmiana stocka na innym zerze niż domyślne
+    nie wraca do domyślnego: stock zmieniać na zerze domyślnym.
+  - **5 osi w oknie Move 0-Point**: pole „5 axes” odsłania „Z out of the wall” (Select wall
+    obraca Z na zewnątrz ściany najkrótszym obrotem, `turn_onto`: ściana +X = 90° wokół Y,
+    jak SPB90 w programach warsztatu) i pola „Turn about X / Y / Z”. Kąty to kąty
+    przestrzenne sterowania: A, B, C wokół nieruchomych X, Y, Z w tej kolejności, czyli
+    R = Rz(C)·Ry(B)·Rx(A) (`axes_of`, `turn_of`; przy B = ±90° A = 0). Jeden kąt naraz jest
+    jednoznaczny; złożone kąty do sprawdzenia na maszynie.
+  - **Snap-0-Point i Rotate 0-Point** ruszają całe mocowanie (zero domyślne z tym, co od
+    niego liczy) i działają tylko z zera domyślnego (`before_setup_move`), inaczej komunikat.
+    Mocowanie, którego zero nigdy nie odjechało, nie ma żadnej z tych właściwości i działa
+    po staremu.
+  - **Program NC**: `op_zero.setup_program` objeżdża zera (aktywne pierwsze), czyta operacje
+    tam, gdzie są policzone, i wraca; z włączonym undo to porzucona transakcja (bez kroku
+    undo, bez ponownego liczenia). `nc_program(zeros=True)` daje `Operation.zero` (Frame
+    względem presetu) dla postprocesora; bez `zeros` wszystko jest w układzie presetu (Play,
+    Verify, czas cyklu), a operacje z pochylonego zera są tam pomijane (ostrzeżenie w
+    report view) — tri-dexel umie tylko narzędzie wzdłuż Z. BLK FORM zawsze z zera domyślnego.
+  - Widok: `scene.apply` rysuje zaparkowaną operację na jej własnym zerze
+    (`op_zero.drawn_at`); w drzewie dopisek „(other 0-Point)”, w Details `ParkedView`.
+- **Postprocesory osobno dla maszyn** (`post/machines.py`, wybór jako typ pliku w oknie
+  eksportu, pamiętany w parametrze `Postprocessor`):
+  - `post/heidenhain.py` — Bridgeport V1000 (sprawdzony). Nowe, eksperymentalne: przesunięte
+    zero jako `CYCL DEF 7` (przed zmianą przesunięcia pod narzędziem najpierw Z100 na
+    presecie, reset przed końcem narzędzia i programu); obrócone zero = odmowa z nazwą operacji.
+  - `post/soraluce.py` — Soraluce T35, obracana głowica (eksperymentalny, wzór: program
+    warsztatu). Każda operacja osobno: `CALL LBL "RESET"`/`"FREE"`, TOOL CALL, głowica w górę
+    (M91), `CYCL DEF 7`, `M138 A B`, `PLANE SPATIAL … STAY COORD ROT`, `CYCL DEF 397`, `L Z100`,
+    ruchy z M13 na pierwszym, `M9`; na końcu etykiety RESET, FREE, HEAD0. Wiercenie na razie
+    cyklem 205 z `CYCL CALL POS` (jak Bridgeport), nie 200/203 z M99.
+  Do zrobienia: symulacja operacji z pochylonego zera, Play z listą programu wybranej
+  maszyny (teraz zawsze lista Bridgeporta), sprawdzenie na maszynie.
 - Półfabrykat „z modelu” FreeCAD ustawia tylko przy tworzeniu, więc po każdej
   zmianie zera tłumacz przestawia go sam (`_place_stock`).
 - **Stock size...** (przycisk w Details stocka; `model/stock_size.py`, `engine/stock_size.py`,

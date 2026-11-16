@@ -67,7 +67,7 @@ FILE_MENU = (
         "file_export_gcode",
         _t("Export NC program..."),
         "CAM_Post",
-        tip=_t("Heidenhain TNC plain language (.H), every setup on its own preset"),
+        tip=_t("Heidenhain plain language (.H) for the machine chosen in the file window, every setup on its own preset"),
         handler="export_nc",
     ),
     Action("file_settings", _t("Settings..."), "preferences-general"),
@@ -165,6 +165,28 @@ TABS = (
                         LARGE,
                         _t("Put the zero point on the selected flat face: Z out of the face, X0 Y0 in the middle of the part"),  # fmt: skip
                         "snap_zero",
+                    ),
+                    Action(
+                        "cam_move_zero",
+                        _t("Move 0-Point"),
+                        "AvangardeCam_MoveZero",
+                        LARGE,
+                        _t("Move the zero point onto a wall of the part (Select wall) or by a distance along X, Y and Z; with 5 axes also turn it. The operations keep the zero point they were made on"),  # fmt: skip
+                        "move_zero",
+                    ),
+                    Action(
+                        "cam_set_default_zero",
+                        _t("Set 0-Point as default"),
+                        "AvangardeCam_SetDefaultZero",
+                        tip=_t("The zero point as it stands is the setup's default from now on: the machine's preset, from which the program gives the other zero points"),  # fmt: skip
+                        handler="set_default_zero",
+                    ),
+                    Action(
+                        "cam_reset_zero",
+                        _t("Reset 0-Point"),
+                        "AvangardeCam_ResetZero",
+                        tip=_t("Put the zero point back on the setup's default one"),
+                        handler="reset_zero",
                     ),
                     Action(
                         "cam_rotate_zero_90",
@@ -351,7 +373,7 @@ TABS = (
                         _t("Export NC"),
                         "CAM_Post",
                         LARGE,
-                        tip=_t("Heidenhain TNC plain language (.H), every setup on its own preset"),
+                        tip=_t("Heidenhain plain language (.H) for the machine chosen in the file window, every setup on its own preset"),
                         handler="export_nc",
                     ),
                 ),
