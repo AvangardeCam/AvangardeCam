@@ -419,6 +419,7 @@ def apply(doc):
     """Make the 3D view show the project as described in the module doc."""
     if doc is None or not FreeCAD.GuiUp or FreeCADGui.getDocument(doc.Name) is None:
         return
+    from avangardecam.engine import op_zero
     from avangardecam.ui import next_setup
 
     jobs = cam.setups(doc)
@@ -445,7 +446,8 @@ def apply(doc):
         for op in job.Operations.Group:
             _show(op, on and not hidden(op))
         for obj in _drawn(job):
-            _set_transform(obj, place)
+            # an operation that counts from another zero point lies on that one
+            _set_transform(obj, op_zero.drawn_at(obj, place))
         _show_axis(job, on)
     _set_frame(doc, view_placement(doc))
     _paint_paths(doc)

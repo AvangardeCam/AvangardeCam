@@ -49,7 +49,7 @@ cat /tmp/ac.txt
   3 XY × 2 Z, undo) and in the dialog (an XY offset past the line, by Z level, remembered);
   the path of the operation selected in the list red (its cutting moves only, again after
   the path changes, none with a sketch selected); a right click on an operation opens its
-  menu where it was clicked (a left click only selects it; Edit..., Activate geometry, Switch off, Hide in 3D, Delete): Hide in 3D and Show in 3D, Switch off (no
+  menu where it was clicked (a left click only selects it; Edit..., Activate geometry, Make 0-Point active, Switch off, Hide in 3D, Delete): Hide in 3D and Show in 3D, Switch off (no
   path, not in the program, "(off)" in the list, undo), Edit... (its window with its values,
   tool and lines; one undo step; the values used last for new contours stay).
 - `test_deburring.py`: Extract boundary edges of the top, the whole sketch, CAM > Deburring on
@@ -128,6 +128,25 @@ cat /tmp/ac.txt
   (90° offered the first time, then the last angle; Cancel changes nothing); the details
   show the rotation, the stock turns with the axes, the zero point stays, the view
   follows, Undo names the step and takes it back.
+- `test_move_zero.py`: a block with a hole (made as a STEP by the test, AC_STEP not used); CAM >
+  Move 0-Point beside Snap-0-Point opens a window that does not block the 3D view; Select wall
+  and a real click on the right wall: Move X to the wall (a typed value replaced), the wall
+  named, not left selected, where the zero point would be drawn in 3D; a round face refused,
+  the button still waiting; the front wall too (a corner, the typed Z kept); OK moves the zero
+  point, the stock and the view follow, the details and the status bar say it, Undo names the
+  step and takes it back; a face selected before the click on the ribbon is taken at once;
+  Cancel and OK without a shift change nothing and make no undo step; one window at a time.
+- `test_op_zero.py` (experimental): the same block with a contour on its top; Set 0-Point as
+  default and Reset 0-Point beside Move 0-Point; Move 0-Point with "5 axes" and "Z out of the
+  wall": a click on the right wall gives the shift and 90° about Y; after OK the tool axis is
+  the wall's, the contour made before keeps its zero point (marked "other 0-Point", drawn on
+  its own zero point, its details say where it counts from), the stock is the same block; a
+  contour on the wall counts from the new zero point; "Make 0-Point active" in the menu of
+  the first one goes back; the Soraluce program has the datum shift and the tilted plane and
+  leaves the zero point and the undo list alone, the Bridgeport one refuses the turned zero
+  point; Set 0-Point as default and its Undo, Reset 0-Point; Edit on an operation of another
+  zero point opens its window on that zero point; Rotate 0-Point away from the default zero
+  point is refused.
 - `test_measure.py`: CAM > Measure from 0-Point: the top face clicked (away from the
   setup's axes on the zero point), Shift+click adds the front face; the window (not modal)
   shows their smallest and largest X, Y, Z together and the sizes, as FreeCAD's exact box

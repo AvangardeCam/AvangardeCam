@@ -388,6 +388,7 @@ def set_zero(job, zero_point):
     sketches must lie level in it (facing the tool or away from it).
     Another change needs a new setup.
     """
+    _op_zero().before_setup_move(job)
     axis = geometry.tool_axis(zero_point)
     if not geometry.same_direction(axis, geometry.tool_axis(zero(job))):
 
@@ -398,6 +399,7 @@ def set_zero(job, zero_point):
         users = [
             op.Label for op in job.Operations.Group
             if contour_of(op) is not None  # the oldest ones, on a clone of the sketch, cannot turn round
+            and not _op_zero().parked(op)  # it stays on its own zero point
             and not (helper_objects(op) and all(level(sketch) for sketch, _names in contour_sketches(op)))
         ]  # fmt: skip
         if users:
@@ -409,6 +411,7 @@ def set_zero(job, zero_point):
     _place_stock(job)
     _sync_operations(job)
     job.Document.recompute()
+    _op_zero().after_setup_move(job)
 
 
 def rotate_zero(job, degrees):
@@ -1027,8 +1030,12 @@ def set_contour(op, contour):
 
 
 def _sync_operations(job):
-    """The operations follow a new zero point, stock or tool."""
+    """The operations follow a new zero point, stock or tool. One that
+    counts from another zero point than the active one waits for it
+    (engine.op_zero)."""
     for op in job.Operations.Group:
+        if _op_zero().parked(op):
+            continue
         if _deburring().deburring_of(op) is not None:
             _deburring().follow_tool(op)  # its depth and offset come from the tool's cone
             _sync_contour(job, op)
@@ -1766,6 +1773,13 @@ def _deburring():
     return deburring
 
 
+def _op_zero():
+    """Zero points of operations, on their own (engine.op_zero)."""
+    from avangardecam.engine import op_zero
+
+    return op_zero
+
+
 def _next_setup():
     """engine.next_setup: a stock left by another setup or a blank's model, in its own module."""
     from avangardecam.engine import next_setup
@@ -2275,41 +2289,52 @@ def _nc_tool(op):
     )
 
 
-def nc_program(doc, name, comment=""):
+def nc_operation(op):
+    """An operation as the NC program has it, read on the setup's active
+    zero point."""
+    if drilling_of(op) is not None:
+        tool = _nc_tool(op)
+        return model_nc.Operation(model_nc.DRILLING, op.Label, tool, (), _drill_cycle(op, tool))
+    if thread_milling_of(op) is not None:
+        tool = _nc_tool(op)
+        return model_nc.Operation(model_nc.THREAD_MILLING, op.Label, tool, thread_moves(op, tool))
+    if adaptive_of(op) is not None:
+        return model_nc.Operation(model_nc.ADAPTIVE, op.Label, _nc_tool(op), nc_moves(op))
+    if _facing().facing_of(op) is not None:
+        return model_nc.Operation(model_nc.FACING, op.Label, _nc_tool(op), nc_moves(op))
+    if _slot().slot_milling_of(op) is not None:
+        return model_nc.Operation(model_nc.SLOT_MILLING, op.Label, _nc_tool(op), _slot().program_moves(op))
+    if _helix().helix_milling_of(op) is not None:
+        return model_nc.Operation(model_nc.HELIX_MILLING, op.Label, _nc_tool(op), _helix().program_moves(op))
+    kind = model_nc.CONTOUR if contour_of(op) is not None else ""
+    if kind and _deburring().deburring_of(op) is not None:
+        kind = model_nc.DEBURRING
+    return model_nc.Operation(kind, op.Label, _nc_tool(op), nc_moves(op))
+
+
+def nc_program(doc, name, comment="", zeros=False):
     """The project as one NC program: each setup on its own preset (setup 1
-    on preset 1, ...), the active operations in their order."""
+    on preset 1, ...), the active operations in their order.
+
+    zeros (experimental, engine.op_zero): an operation that counts from
+    another zero point than the setup's preset has that zero point
+    (Operation.zero) and its moves counted from it, for a postprocessor
+    that shifts and tilts. Without, every operation is in its preset's
+    coordinates, as the simulation and the cycle time run a setup; an
+    operation on a tilted zero point is left out then and said so in the
+    report view."""
     result = []
     for preset, job in enumerate(setups(doc), start=1):
-        ops = []
-        for op in job.Operations.Group:
-            if not getattr(op, "Active", True):
-                continue
-            if drilling_of(op) is not None:
-                tool = _nc_tool(op)
-                ops.append(model_nc.Operation(model_nc.DRILLING, op.Label, tool, (), _drill_cycle(op, tool)))
-                continue
-            if thread_milling_of(op) is not None:
-                tool = _nc_tool(op)
-                ops.append(model_nc.Operation(model_nc.THREAD_MILLING, op.Label, tool, thread_moves(op, tool)))
-                continue
-            if adaptive_of(op) is not None:
-                ops.append(model_nc.Operation(model_nc.ADAPTIVE, op.Label, _nc_tool(op), nc_moves(op)))
-                continue
-            if _facing().facing_of(op) is not None:
-                ops.append(model_nc.Operation(model_nc.FACING, op.Label, _nc_tool(op), nc_moves(op)))
-                continue
-            if _slot().slot_milling_of(op) is not None:
-                ops.append(model_nc.Operation(model_nc.SLOT_MILLING, op.Label, _nc_tool(op), _slot().program_moves(op)))
-                continue
-            if _helix().helix_milling_of(op) is not None:
-                ops.append(model_nc.Operation(model_nc.HELIX_MILLING, op.Label, _nc_tool(op), _helix().program_moves(op)))
-                continue
-            kind = model_nc.CONTOUR if contour_of(op) is not None else ""
-            if kind and _deburring().deburring_of(op) is not None:
-                kind = model_nc.DEBURRING
-            ops.append(model_nc.Operation(kind, op.Label, _nc_tool(op), nc_moves(op)))
-        result.append(model_nc.Setup(preset, job.Label, stock_bounds(job), tuple(ops)))
-    return model_nc.Program(name, comment, datetime.date.today(), tuple(result))
+        stock_, ops = _op_zero().setup_program(job)
+        result.append(model_nc.Setup(preset, job.Label, stock_, tuple(ops)))
+    program = model_nc.Program(name, comment, datetime.date.today(), tuple(result))
+    if not zeros:
+        program, left_out = _op_zero().on_presets(program)
+        if left_out:
+            FreeCAD.Console.PrintWarning(
+                "AvangardeCam: left out (on a tilted zero point, experimental): {}\n".format(", ".join(left_out))
+            )
+    return program
 
 
 def helper_objects(op):

@@ -13,6 +13,11 @@ the shop runs on its machine (a TNC 620):
 - drilling with the universal pecking cycle (CYCL DEF 205) and a
   CYCL CALL POS on each hole, the spindle starting on the first one,
 - one program for all setups, each on its own preset (CYCL DEF 247),
+- an operation that counts from a zero point shifted from the preset
+  (experimental, model.op_zero) between a datum shift (CYCL DEF 7) and its
+  reset, the tool high on the preset before the shift changes; this
+  machine does not tilt, so a turned zero point is refused (post/soraluce.py
+  writes those),
 - ISO-8859-1 text with CRLF line ends.
 
 The program does not lean on the machine for anything but the preset:
@@ -24,6 +29,7 @@ import math
 from dataclasses import dataclass
 
 from avangardecam.model import nc
+from avangardecam.model import op_zero
 
 EXTENSION = ".H"
 ENCODING = "iso-8859-1"
@@ -127,6 +133,13 @@ def _cycle_205(cycle, depth):
     return lines
 
 
+def cycle_7(origin):
+    """A datum shift as the shop's programs have it (CYCL DEF 7)."""
+    return ["CYCL DEF 7.0 NULPUNT"] + [
+        "CYCL DEF 7.{}  {}{}".format(i, axis, number(value)) for i, (axis, value) in enumerate(zip("XYZ", origin), start=1)
+    ]
+
+
 class _Writer:
     def __init__(self, program, machine):
         self.program = program
@@ -139,6 +152,7 @@ class _Writer:
         self.last_rapid = True  # FMAX holds for its own block only
         self.feed_word = None
         self.compensation = None  # radius compensation on (nc.LEFT, nc.RIGHT)
+        self.datum = None  # the datum shift on: (x, y, z) from the preset
         self.where = ()  # (setup index, operation index) being written
         self.source = None  # where in the operation the blocks added come from (model.machine)
         self.sources = []  # of each block
@@ -151,6 +165,31 @@ class _Writer:
     def _from(self, *source):
         """The blocks added from now on come from there (none: from nowhere)."""
         self.source = source or None
+
+    def _datum(self, zero, lift=True, label=""):
+        """The datum shift of an operation's zero point (None: the preset).
+        Before it changes under a tool that has been down, the tool goes
+        high on the preset (lift; not when the caller does that)."""
+        if not op_zero.is_shift(zero):
+            raise ValueError(
+                "{} counts from a turned zero point ({}); the {} postprocessor only shifts the zero point. "
+                "Choose the postprocessor of a machine that tilts.".format(
+                    label or "An operation", op_zero.turn_text(zero), self.machine.name
+                )
+            )
+        origin = None if op_zero.is_preset(zero) else tuple(zero.origin)
+        if origin == self.datum:
+            return
+        self._from()
+        if self.datum is not None:
+            self.add(*cycle_7((0.0, 0.0, 0.0)))
+        if lift and self.tool is not None and self.position[2] is not None:
+            self.add(self.machine.tool_end[0])
+        if origin is not None:
+            self.add(*cycle_7(origin))
+        self.datum = origin
+        self.position = [None, None, None]  # coordinates mean another place now
+        self.last_rapid = True
 
     # -- program -----------------------------------------------------------------
 
@@ -168,6 +207,7 @@ class _Writer:
         for setup_index, setup in enumerate(program.setups):
             if not setup.operations:
                 continue
+            self._datum(None, lift=False)
             if self.spindle_on:
                 self.add(self.machine.tool_end[0])  # high before the preset changes
             self.add("CYCL DEF 247 REF.PUNT VASTL. ~", _q("Q339", "{:+d}".format(setup.preset), "REF.PUNT-NUMMER"))
@@ -182,6 +222,7 @@ class _Writer:
             for op_index, op in enumerate(setup.operations):
                 self.where = (setup_index, op_index)
                 self._operation(op, order)
+        self._datum(None, lift=False)
         if self.tool is not None:
             self.add(*self.machine.tool_end)
         self.add(self.machine.park, "*- M30", "M30", "END PGM {} MM".format(program.name))
@@ -209,6 +250,7 @@ class _Writer:
         tool = op.tool
         change = self.tool is None or self.tool.number != tool.number
         if change and self.tool is not None:
+            self._datum(None, lift=False)
             self._from("change")
             self.add(self.machine.tool_end[0])
             self._from()
@@ -234,6 +276,7 @@ class _Writer:
             self.feeds = None
             self.spindle_on = False
             self.position = [None, None, None]
+        self._datum(op.zero, label=op.label)
         if op.kind == nc.DRILLING:
             self._drilling(op)
             return

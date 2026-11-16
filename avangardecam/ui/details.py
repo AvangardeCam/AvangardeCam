@@ -363,19 +363,24 @@ class SetupView(DetailsView):
         self.job = job
         self.axis_label = self.add_row(tr("Tool axis"), "")
         self.zero_label = self.add_row(tr("Zero point"), "")
+        self.default_label = self.add_row(tr("From the default 0-Point"), "")
         self.rotation_label = self.add_row(tr("Rotation about Z"), "")
         self.fixture_label = self.add_row(tr("Fixture"), "")
         self.stock_label = self.add_row(tr("Stock"), "")
         self.operations_label = self.add_row(tr("Operations"), "")
         self.note.setText(
-            tr("The zero point lies in the middle of the part, in the plane of the face it was snapped to; it is given in the model's coordinates. To move it, select a flat face and click CAM > Snap-0-Point; to turn it about Z, click CAM > Rotate 0-Point.")  # fmt: skip
+            tr("Snap-0-Point puts the zero point in the middle of the part, in the plane of the selected flat face; it is given in the model's coordinates. It is the setup's default zero point: the machine's preset. CAM > Move 0-Point moves it away (onto a wall, by a distance; with 5 axes it turns): operations keep the zero point they were made on and the program gives it from the default one. CAM > Reset 0-Point puts it back, Set 0-Point as default makes the present one the default. Rotate 0-Point turns the whole setup about Z.")  # fmt: skip
         )
         self.update_view()
 
     def update_view(self):
+        from avangardecam.engine import op_zero as engine_op_zero
+        from avangardecam.ui import op_zero as ui_op_zero
+
         place = cam.zero(self.job)
         self.axis_label.setText(direction_text(geometry.tool_axis(place)))
         self.zero_label.setText(point_text(place.Base))
+        self.default_label.setText(ui_op_zero.zero_text(engine_op_zero.from_default(self.job)))
         self.rotation_label.setText("{:g}°".format(round(cam.zero_rotation(self.job), 3)))
         self.fixture_label.setText(", ".join(self.job.Fixtures) or NONE)
         self.stock_label.setText(size_text(cam.stock_bounds(self.job)))

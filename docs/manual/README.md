@@ -28,7 +28,7 @@ two counterbores for screw heads and four M6 holes, machined in two clampings.
 ![AvangardeCam window](images/01_setup.jpg)
 
 - **CAM ribbon** (top), in groups:
-  - **Setup:** Job, Next setup, Snap-0-Point, zero rotation, Stock, Tool library;
+  - **Setup:** Job, Next setup, Snap-0-Point, Move 0-Point, Set 0-Point as default, Reset 0-Point, zero rotation, Stock, Tool library;
   - **Geometry:** Extract boundary edges;
   - **Measure:** measuring;
   - **Milling:** Contour tooling, Facing, Adaptive…;
@@ -54,6 +54,22 @@ The zero point starts on top of the model, in the middle. To move it:
 
 - select a flat face and click **Snap-0-Point**: Z points out of the face, X0 Y0 lands in the middle of the part;
 - **Rotate 0-Point 90° / 180° / …** turns the zero point about Z.
+
+#### Moving the zero point within a setup (experimental)
+
+> This part is experimental: it has not run on a machine yet. Check such a program on the control's own simulation and with a dry run.
+
+The zero point Snap-0-Point gives is the setup's **default zero point**: the machine's preset. **Move 0-Point** moves the zero point away from it, and **every operation keeps the zero point it was made on**: operations made before the move stay as they are, new ones count from where the zero point was left. In the program each operation's zero point is given from the default one (a datum shift, and a tilted plane when it is turned).
+
+- **Move 0-Point**: in its window click **Select wall**, then a flat face of the part: the zero point goes the shortest way onto that face (a wall square to X changes X only; a second wall adds to the first, so two or three walls give a corner). Or type how far it moves in **Move X / Y / Z**. The 3D view shows where the zero point would be; **OK** moves it.
+- **5 axes** (a tick box in that window), for a machine that tilts: with **Z out of the wall** ticked, Select wall also turns the zero point's Z out of the wall, square to it, so the tool stands on that wall. **Turn about X / Y / Z** turns the zero point by the angles typed, about its own axes (X first, then Y, then Z, about the axes as they stand before the turn).
+- **Set 0-Point as default**: the zero point as it stands becomes the default one (the preset).
+- **Reset 0-Point**: the zero point goes back to the default one.
+- **Make 0-Point active** (right click on an operation): the zero point goes to the one that operation counts from, to change it or to add operations there. An operation on another zero point is marked *(other 0-Point)* in the tree; **Edit…** on it makes its zero point active first.
+
+Snap-0-Point and Rotate 0-Point move the whole setup (its default zero point with the operations on it); use them while the zero point is on the default one. Change the stock there too: on another zero point the stock is shown as the box around the same block.
+
+Play, Verify and Cycle time run a setup on its preset: operations on a shifted zero point are shown in their place, operations on a tilted zero point are left out there for now.
 
 ### Stock
 
@@ -319,6 +335,8 @@ The Setup 2 simulation starts from what Setup 1 left:
 | **Verify** | The active setup's program cut out of its stock: too deep into the part in red, material left in blue, and rapid moves into material. |
 | **Cycle time** | Time of each operation and setup in a table, from the machine's dynamics. |
 | **Play** | The program played as on the machine (section 6). |
-| **Export NC** | Heidenhain TNC plain language (`.H`), every setup on its own preset. |
+| **Export NC** | Heidenhain plain language (`.H`), every setup on its own preset. The machine is chosen as the file type of the export window. |
 
-> The postprocessor is made for and tested on a Bridgeport V1000 with a TNC 620. On another machine, check the first programs carefully.
+> The **Bridgeport V1000** postprocessor (TNC 620) is made for and tested on that machine. On another machine, check the first programs carefully. It writes a shifted zero point as a datum shift (`CYCL DEF 7`, experimental) and refuses a turned one.
+>
+> The **Soraluce T35** postprocessor (turning head) is experimental and has not run on the machine yet. It writes every operation on its own: the labels RESET and FREE, the tool call, the datum shift (`CYCL DEF 7`), `PLANE SPATIAL` with the zero point's angles and the head cycle. Programs with one angle (a wall of a block) follow the shop's own programs; check programs with more than one angle with extra care.

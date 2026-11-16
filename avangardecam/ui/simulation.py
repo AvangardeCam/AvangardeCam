@@ -33,10 +33,15 @@ _WINDOW_SHARE = 0.7
 
 def operations(job):
     """The operations of a setup the simulation runs: active, with a tool
-    and a path."""
+    and a path, counting from the setup's active zero point (FreeCAD's
+    simulator runs the paths on one zero point; engine.op_zero)."""
+    from avangardecam.engine import op_zero
+
     result = []
     for op in job.Operations.Group if job is not None else []:
         tc = getattr(op, "ToolController", None)
+        if op_zero.parked(op):
+            continue
         if getattr(op, "Active", True) and tc is not None and getattr(tc, "Tool", None) is not None:
             if op.Path is not None and op.Path.Commands:
                 result.append(op)

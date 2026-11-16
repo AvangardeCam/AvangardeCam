@@ -835,7 +835,7 @@ def step20():
     check(menu is not None and menu.isVisible(), "a right click on an operation opens its menu")
     check(panel().current_entry() == ("operation", OP), "and selects it")
     texts = [a.text() for a in menu.actions() if not a.isSeparator()]
-    check(texts == ["Edit...", "Activate geometry", "Switch off", "Hide in 3D", "Delete"], "menu: {}".format(texts))
+    check(texts == ["Edit...", "Activate geometry", "Make 0-Point active", "Switch off", "Hide in 3D", "Delete"], "menu: {}".format(texts))
     later(400, step20a)
 
 

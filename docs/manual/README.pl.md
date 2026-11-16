@@ -30,7 +30,7 @@ Nazwy przycisków i pól są takie jak w programie (po angielsku).
 ![Okno AvangardeCam](images/01_setup.jpg)
 
 - **Wstążka CAM** (u góry), podzielona na grupy:
-  - **Setup:** Job, Next setup, Snap-0-Point, obrót zera, Stock, Tool library;
+  - **Setup:** Job, Next setup, Snap-0-Point, Move 0-Point, Set 0-Point as default, Reset 0-Point, obrót zera, Stock, Tool library;
   - **Geometry:** Extract boundary edges;
   - **Measure:** pomiary;
   - **Milling:** Contour tooling, Facing, Adaptive…;
@@ -56,6 +56,23 @@ Zero jest domyślnie na górze modelu, pośrodku. Żeby je przenieść:
 
 - zaznacz płaską ścianę i kliknij **Snap-0-Point**: oś Z wychodzi ze ściany, a X0 Y0 trafia na środek detalu;
 - **Rotate 0-Point 90° / 180° / …** obraca zero wokół osi Z.
+
+#### Przesuwanie zera w obrębie mocowania (eksperymentalne)
+
+> Ta część jest eksperymentalna: nie była jeszcze puszczona na maszynie. Taki program sprawdź w symulacji sterowania i na sucho.
+
+Zero ustawione przez Snap-0-Point to **domyślny punkt zerowy** mocowania, czyli preset maszyny. **Move 0-Point** odsuwa zero od niego, a **każda operacja zostaje przy zerze, na którym powstała**: operacje zrobione przed przesunięciem zostają bez zmian, nowe liczą się od miejsca, w którym zero zostało. W programie zero każdej operacji jest podane względem domyślnego (przesunięcie punktu zerowego, a przy obróconym zerze także pochylona płaszczyzna).
+
+- **Move 0-Point**: w oknie kliknij **Select wall**, a potem płaską ścianę detalu: zero trafia najkrótszą drogą na tę ścianę (ściana prostopadła do X zmienia tylko X; druga ściana dokłada się do pierwszej, więc dwie lub trzy ściany dają narożnik). Możesz też wpisać przesunięcie w polach **Move X / Y / Z**. Widok 3D pokazuje, gdzie zero się znajdzie; **OK** je przesuwa.
+- **5 axes** (pole do zaznaczenia w tym oknie), dla maszyny z pochylaniem: przy zaznaczonym **Z out of the wall** Select wall dodatkowo obraca oś Z zera na zewnątrz ściany, prostopadle do niej, więc narzędzie staje na tej ścianie. Pola **Turn about X / Y / Z** obracają zero o wpisane kąty wokół jego własnych osi (najpierw X, potem Y, potem Z, wokół osi w położeniu sprzed obrotu).
+- **Set 0-Point as default**: obecne zero staje się domyślnym (presetem).
+- **Reset 0-Point**: zero wraca na domyślne.
+- **Make 0-Point active** (prawy klik na operacji): zero przechodzi tam, skąd liczy ta operacja, żeby ją zmienić albo dodać tam kolejne. Operacja z innego zera ma w drzewie dopisek *(other 0-Point)*; **Edit…** na niej najpierw uaktywnia jej zero.
+
+Snap-0-Point i Rotate 0-Point przestawiają całe mocowanie (domyślne zero razem z operacjami, które od niego liczą); używaj ich, gdy zero stoi na domyślnym. Stock też zmieniaj tam: na innym zerze stock jest pokazany jako pudełko wokół tego samego bloku.
+
+Play, Verify i Cycle time puszczają mocowanie na jego presecie: operacje z przesuniętego zera są pokazane na swoim miejscu, a operacje z pochylonego zera są tam na razie pomijane.
+
 
 ### Stock
 
@@ -321,6 +338,8 @@ Symulacja Setup 2 zaczyna od materiału, który został po Setup 1:
 | **Verify** | Program aktywnego Setupu wycięty ze stocku. Na czerwono: za głęboko w detal. Na niebiesko: zostawiony materiał. Pokazuje też szybkie ruchy w materiale. |
 | **Cycle time** | Czas każdej operacji i Setupu w tabeli, liczony z dynamiki maszyny. |
 | **Play** | Odtwarzanie programu jak na maszynie (rozdział 6). |
-| **Export NC** | Program Heidenhain TNC (`.H`) dla każdego Setupu, każdy na własnym presecie. |
+| **Export NC** | Program Heidenhain (`.H`), każdy Setup na własnym presecie. Maszynę wybierasz jako typ pliku w oknie eksportu. |
 
-> Postprocesor jest zrobiony i sprawdzony na Bridgeport V1000 z TNC 620. Przy innej maszynie dokładnie sprawdź pierwsze programy.
+> Postprocesor **Bridgeport V1000** (TNC 620) jest zrobiony i sprawdzony na tej maszynie. Przy innej maszynie dokładnie sprawdź pierwsze programy. Przesunięte zero pisze jako przesunięcie punktu zerowego (`CYCL DEF 7`, eksperymentalnie), a obróconego odmawia.
+>
+> Postprocesor **Soraluce T35** (obracana głowica) jest eksperymentalny i nie był jeszcze puszczony na maszynie. Każdą operację pisze osobno: etykiety RESET i FREE, wywołanie narzędzia, przesunięcie zera (`CYCL DEF 7`), `PLANE SPATIAL` z kątami zera i cykl głowicy. Programy z jednym kątem (ściana bloku) są wzorowane na programach warsztatu; programy z kilkoma kątami sprawdzaj szczególnie uważnie.

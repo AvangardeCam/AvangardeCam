@@ -98,6 +98,10 @@ class Operation:
     tool: Tool
     moves: tuple
     cycle: Optional[DrillCycle] = None  # DRILLING
+    # the zero point the operation counts from when it is not the setup's
+    # preset (experimental, model.op_zero): a model.frame.Frame, its origin
+    # and axes in the preset's coordinates; the moves are counted from it
+    zero: Optional[object] = None
 
 
 @dataclass(frozen=True)
