@@ -475,6 +475,7 @@ def set_stock(job, box):
     s.ExtZneg = _quantity(box.z_neg_mm, "mm")
     s.ExtZpos = _quantity(box.z_pos_mm, "mm")
     _place_stock(job)
+    _op_zero().stock_changed(job)  # the stock's block, kept for the setup's other zero points
     _sync_operations(job)
     _show_stock(s)
     doc.recompute()
@@ -2312,29 +2313,20 @@ def nc_operation(op):
     return model_nc.Operation(kind, op.Label, _nc_tool(op), nc_moves(op))
 
 
-def nc_program(doc, name, comment="", zeros=False):
+def nc_program(doc, name, comment=""):
     """The project as one NC program: each setup on its own preset (setup 1
     on preset 1, ...), the active operations in their order.
 
-    zeros (experimental, engine.op_zero): an operation that counts from
-    another zero point than the setup's preset has that zero point
-    (Operation.zero) and its moves counted from it, for a postprocessor
-    that shifts and tilts. Without, every operation is in its preset's
-    coordinates, as the simulation and the cycle time run a setup; an
-    operation on a tilted zero point is left out then and said so in the
-    report view."""
+    An operation that counts from another zero point than the setup's
+    preset (experimental, engine.op_zero) has that zero point
+    (Operation.zero) and its moves counted from it: a postprocessor shifts
+    and tilts there, Play, Verify and the cycle time run it from there
+    (model.tilted)."""
     result = []
     for preset, job in enumerate(setups(doc), start=1):
         stock_, ops = _op_zero().setup_program(job)
         result.append(model_nc.Setup(preset, job.Label, stock_, tuple(ops)))
-    program = model_nc.Program(name, comment, datetime.date.today(), tuple(result))
-    if not zeros:
-        program, left_out = _op_zero().on_presets(program)
-        if left_out:
-            FreeCAD.Console.PrintWarning(
-                "AvangardeCam: left out (on a tilted zero point, experimental): {}\n".format(", ".join(left_out))
-            )
-    return program
+    return model_nc.Program(name, comment, datetime.date.today(), tuple(result))
 
 
 def helper_objects(op):

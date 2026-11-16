@@ -4,7 +4,8 @@
 playback (model.playback.Timeline), cut by the stock model
 (avangardecam.stocklab) as Verify cuts it: the setup's stock box, each
 tool's cutting part (model.verify.stock_tool), the moves the machine makes,
-in the setup's coordinates, the tool from +Z.
+in the setup's coordinates, the tool from +Z; the moves of an operation on
+another zero point from where its tool stands (model.tilted).
 
 Going on in time cuts only what the tool went along since; a segment the
 tool is on is cut up to where it is. Going back starts again from the last
@@ -34,7 +35,7 @@ import numpy as np
 
 from avangardecam import stocklab
 from avangardecam.model import crashes as model_crashes
-from avangardecam.model import start_stock
+from avangardecam.model import start_stock, tilted
 from avangardecam.model.playback import point_on
 from avangardecam.model.verify import stock_tool
 from avangardecam.stocklab import tools as stock_tools
@@ -105,7 +106,7 @@ class Material:
         # what the machine ran into: (kind, segment) -> mm3 taken (the most
         # found: a segment cut in pieces finds it in one of them), in the order found
         self.crashes = {}
-        # the tool of each segment
+        # the tool of each segment (its zero point: timeline.zero_of)
         self._tool_of = [None] * len(timeline.segments)
         for step in timeline.steps:
             for k in range(step.first, step.first + step.count):
@@ -170,7 +171,8 @@ class Material:
         if not line.segments:
             return
         i = max(int(np.searchsorted(line.starts, t0, side="right")) - 1, 0)
-        pending, tool = [], None  # moves of one tool waiting to be cut, their first segment
+        # moves of one tool on one zero point waiting to be cut, their first segment
+        pending, tool, zero = [], None, None
         first_pending = i
         while i < len(line.segments) and line.starts[i] < t1 - _SAME:
             start, duration = float(line.starts[i]), float(line.durations[i])
@@ -181,33 +183,34 @@ class Material:
                 a, b = (0.0, 1.0) if start >= t0 - _SAME else (1.0, 1.0)
             if b > a + _SAME:
                 number = self._tool_of[i]
-                if number != tool and pending:
-                    self._flush(pending, tool, first_pending)
+                if (number != tool or line.zero_of[i] is not zero) and pending:
+                    self._flush(pending, tool, first_pending, zero)
                     pending = []
                 if not pending:
                     first_pending = i
-                tool = number
+                tool, zero = number, line.zero_of[i]
                 move = _stock_move(_piece(line.segments[i], a, b))
                 if move is not None:
                     pending.append((i, move))
             done = b >= 1.0 - _SAME
             if done and (i + 1) % self._every == 0 and (i + 1) not in self._kept:
-                self._flush(pending, tool, first_pending)
+                self._flush(pending, tool, first_pending, zero)
                 pending = []
                 self._kept[i + 1] = self.stock.copy()
             if not done:
                 break
             i += 1
-        self._flush(pending, tool, first_pending)
+        self._flush(pending, tool, first_pending, zero)
 
-    def _flush(self, pending, tool, first):
-        """Cut the moves of one tool waiting, all at once, and keep what
-        it ran into."""
+    def _flush(self, pending, tool, first, zero=None):
+        """Cut the moves of one tool waiting (counted from zero), all at
+        once, and keep what it ran into."""
         if not pending:
             return
-        operation = stocklab.Operation(self._shapes[tool], "+Z", [m for _, m in pending])
+        axis = tilted.axis(zero)
+        operation = stocklab.Operation(self._shapes[tool], axis, [tilted.stock_move(zero, m) for _, m in pending])
         pieces = [(a, b, rapid, pending[number][0]) for a, b, rapid, number in stock_segments(operation, CHORD * self.stock.spacing.min())]
-        for c in model_crashes.cut(self.stock, operation.tool, self._shanks[tool], pieces):
+        for c in model_crashes.cut(self.stock, operation.tool, self._shanks[tool], pieces, axis):
             key = (c.kind, c.key)
             self.crashes[key] = max(self.crashes.get(key, 0.0), c.volume_mm3)
 

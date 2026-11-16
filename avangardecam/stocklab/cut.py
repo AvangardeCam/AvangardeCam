@@ -3,7 +3,8 @@
 """Cutting the stock with the moves of the tool's tip, in the part's frame.
 
 The tool axis goes from the tip to the shank, along X, Y or Z of the part
-("+Z": the tool comes from above). Lines are cut as they are; arcs and
+("+Z": the tool comes from above); an axis along none of them (a vector)
+is cut by oblique.py. Lines are cut as they are; arcs and
 helices as chords no further than CHORD cells from the arc. A rapid move
 cuts as a feed move (the verification will tell them apart).
 
@@ -23,7 +24,7 @@ import math
 
 import numpy as np
 
-from . import sweep
+from . import oblique, sweep
 from .dexel import other_axes
 from .tools import Line
 
@@ -81,6 +82,9 @@ def cut_lines(stock, tool, axis, starts, ends):
     """Cut the moves from starts[i] to ends[i] (arrays (n, 3)) all at once:
     the same as one after another, as material once taken stays taken.
     Returns the volume taken (the mean of the three families)."""
+    tilted = oblique.direction(axis)
+    if tilted is not None:  # along none of the stock's axes
+        return oblique.cut_lines(stock, tool, tilted, starts, ends)
     k, sigma = tool_axis(axis)
     starts = np.asarray(starts, dtype=float).reshape(-1, 3)
     ends = np.asarray(ends, dtype=float).reshape(-1, 3)
@@ -286,7 +290,12 @@ def arc_points(axis, start, end, center, ccw, tolerance):
     `center`, turning counterclockwise when looking at the tip from the
     shank side of the tool axis when `ccw` (G3), else clockwise (G2). The
     same start and end on the plane make a full circle. The radius and the
-    height along the tool axis go evenly from start to end."""
+    height along the tool axis go evenly from start to end. With a tool
+    axis along none of the stock's axes `center` is any point of the
+    arc's axis (oblique.arc_points)."""
+    tilted = oblique.direction(axis)
+    if tilted is not None:
+        return oblique.arc_points(tilted, start, end, center, ccw, tolerance)
     k, sigma = tool_axis(axis)
     u, v = other_axes(k)
     start = np.asarray(start, dtype=float)

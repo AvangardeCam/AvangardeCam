@@ -55,6 +55,23 @@ _TIPS = {
 }
 
 
+CHECK_STYLE = "color: #c0392b; font-weight: bold;"
+
+
+def check_note():
+    """The warning shown with every Adaptive: it is not yet reliable."""
+    return tr("Attention: check that Adaptive works well. Look at its path in Play or Verify before cutting: is everything cleared, does the tool go only where it should?")  # fmt: skip
+
+
+def check_label(parent=None):
+    """check_note as a red label."""
+    label = QtWidgets.QLabel(check_note(), parent)
+    label.setObjectName("AvangardeCamAdaptiveCheck")
+    label.setWordWrap(True)
+    label.setStyleSheet(CHECK_STYLE)
+    return label
+
+
 def is_mill(tool):
     return tool is not None and tool.shape in MILLS
 
@@ -294,6 +311,7 @@ class AdaptiveDialog(QtWidgets.QDialog):
         heading = QtWidgets.QLabel(tr("Adaptive clearing: an even load on the tool, from Start Z down"))
         heading.setStyleSheet("font-weight: bold;")
         box.addWidget(heading)
+        box.addWidget(check_label(self))
         form = QtWidgets.QFormLayout()
         box.addLayout(form)
         form.addRow(tr("Setup") + ":", QtWidgets.QLabel(job.Label))

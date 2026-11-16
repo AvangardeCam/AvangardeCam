@@ -11,8 +11,10 @@ behind a few windows that speak the language of the shop floor: pick lines or fa
 > the simulation and on the machine (dry run, reduced feed) before cutting.
 
 > **This is the `experimental` branch.** It adds zero points of operations (Move 0-Point with
-> 5 axes, Set 0-Point as default, Reset 0-Point, Make 0-Point active) and a second
-> postprocessor for a machine with a turning head. **None of it has run on a machine yet.**
+> 5 axes, Set 0-Point as default, Reset 0-Point, Make 0-Point active), a stock with its own
+> zero point, Play and Verify for a tilted tool (5 axes) and a second postprocessor for a
+> machine with a turning head. **None of it has run on a machine yet.** Adaptive asks to be
+> checked in Play or Verify before cutting.
 > The tested version is the [`main`](https://github.com/AvangardeCam/AvangardeCam/tree/main)
 > branch and its releases.
 
@@ -52,7 +54,9 @@ own work better and easier. The code is built for it: small modules, tests, a cl
   point it was made on. **Move 0-Point** moves the zero point (onto a wall, by a distance)
   and with **5 axes** turns it (Z out of a wall, or by angles about X, Y, Z); **Set 0-Point
   as default**, **Reset 0-Point** and **Make 0-Point active** (an operation's menu) go
-  between them. One postprocessor for each machine, chosen in the export window: the
+  between them; Play, Verify and the cycle time run every operation from its own zero point,
+  the tool tilted as that zero point is. The stock has a zero point of its own (the default
+  one) and stays the same block wherever it is typed. One postprocessor for each machine, chosen in the export window: the
   Bridgeport V1000 one writes a shifted zero point as `CYCL DEF 7`, the **Soraluce T35** one
   (turning head) writes every operation with `CYCL DEF 7`, `PLANE SPATIAL` and the head cycle.
 - **Easy to extend with AI:** add your own functions and write the postprocessor for your
@@ -64,6 +68,11 @@ Needs **FreeCAD 1.1** or newer (Windows, Linux, macOS).
 
 1. Download **[AvangardeCam.zip](https://github.com/AvangardeCam/AvangardeCam/releases/latest/download/AvangardeCam.zip)**
    (the latest release) and unpack it. It contains one folder, `AvangardeCam`.
+
+   The **experimental version** (this branch, not run on a machine yet) is a pre-release of
+   its own: **[AvangardeCam.zip of v0.2.0-experimental](https://github.com/AvangardeCam/AvangardeCam/releases/download/v0.2.0-experimental/AvangardeCam.zip)**.
+   It installs the same way, in place of the tested one (one `AvangardeCam` folder at a time);
+   to go back, put the tested version's folder there again.
 2. Put the `AvangardeCam` folder into FreeCAD's `Mod` folder (create `Mod` if it is not
    there yet):
    - Windows: `%APPDATA%\FreeCAD\v1-1\Mod\`

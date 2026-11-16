@@ -63,7 +63,7 @@ _HEAD_CYCLE = (
     heidenhain._Continued(" Q1506=+Q120 ; HORIZ. JOINT DEGREE"),
 )
 _FREE = ('CALL LBL "RESET"', 'CALL LBL "FREE"')
-_START_Z_MM = 100.0  # of Machine.start_z
+START_Z_MM = 100.0  # of Machine.start_z
 
 
 def angle(value):
@@ -172,7 +172,7 @@ class _Writer(heidenhain._Writer):
         self.tool = tool
         self.feed_word = None
         self.compensation = None
-        self.position = [None, None, _START_Z_MM]
+        self.position = [None, None, START_Z_MM]
         self.last_rapid = True
         self.spindle_on = True  # started here, with the coolant, on the first block
         start = len(self.blocks)

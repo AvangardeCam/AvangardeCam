@@ -125,11 +125,17 @@ def _in_the_way(stock, tool, a, b):
     return bool(np.any(has & near))
 
 
-def cut(stock, tool, shank, pieces):
+def cut(stock, tool, shank, pieces, axis="+Z"):
     """Cut straight pieces of moves, in order, with the tool (from +Z) and
     its shank (shank_tool; None: none). pieces: (start, end, rapid, key),
     the pieces of one move one after another with its key. Returns the
-    Crash found, one for each kind and move, in the order found."""
+    Crash found, one for each kind and move, in the order found. A tool
+    along another axis (an operation on a turned zero point, stocklab's
+    axis): model.crashes_tilted."""
+    if not (isinstance(axis, str) and axis == "+Z"):
+        from avangardecam.model import crashes_tilted
+
+        return crashes_tilted.cut(stock, tool, shank, pieces, axis)
     touch = stock_program.TOUCH * float(np.prod(stock.spacing))
     top = _top(stock)  # material only goes: higher it never is
     narrow = None
@@ -200,13 +206,13 @@ class Found(NamedTuple):
 
 
 def simulate(stock, operations, shanks):
-    """Cut the operations (stocklab.Operation, the tool from +Z) in turn,
-    shanks[i] the shank of operations[i]'s tool (or None), as
-    stocklab.simulate does; returns what they ran into (Found)."""
+    """Cut the operations (stocklab.Operation) in turn, shanks[i] the
+    shank of operations[i]'s tool (or None), as stocklab.simulate does;
+    returns what they ran into (Found)."""
     chord = CHORD * stock.spacing.min()
     result = []
     for index, (operation, shank) in enumerate(zip(operations, shanks)):
         pieces = ((a, b, rapid, number) for a, b, rapid, number in stock_program.segments(operation, chord))
-        for c in cut(stock, operation.tool, shank, pieces):
+        for c in cut(stock, operation.tool, shank, pieces, operation.axis):
             result.append(Found(c.kind, index, c.key, c.volume_mm3))
     return result

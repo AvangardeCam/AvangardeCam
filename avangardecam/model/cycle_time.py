@@ -312,16 +312,19 @@ def segment_times(segments, feeds, times=BRIDGEPORT_V1000):
     return result
 
 
-def setup_time(setup, times=BRIDGEPORT_V1000, retract_z=RETRACT_Z_MM, change_z=TOOL_CHANGE_Z_MM):
-    """The time of a setup (nc.Setup) and of each of its operations (SetupTime)."""
-    follower = Machine(retract_z, change_z, full=True)
+def setup_time(setup, times=BRIDGEPORT_V1000, retract_z=RETRACT_Z_MM, change_z=TOOL_CHANGE_Z_MM, anew=False):
+    """The time of a setup (nc.Setup) and of each of its operations
+    (SetupTime); anew: a machine that turns its head (model.machine.Machine:
+    the way of its head between two operations is not in the program, and
+    in no time here)."""
+    follower = Machine(retract_z, change_z, full=True, anew=anew)
     return SetupTime(setup.label, tuple(operation_time(op, follower, times) for op in setup.operations))
 
 
-def program_time(program, times=BRIDGEPORT_V1000, retract_z=RETRACT_Z_MM):
+def program_time(program, times=BRIDGEPORT_V1000, retract_z=RETRACT_Z_MM, change_z=TOOL_CHANGE_Z_MM, anew=False):
     """The times of a program's setups (SetupTime), in their order: each
     starts with its first tool called (the operator changes the setup)."""
-    return [setup_time(setup, times, retract_z) for setup in program.setups]
+    return [setup_time(setup, times, retract_z, change_z, anew) for setup in program.setups]
 
 
 def duration_text(seconds):

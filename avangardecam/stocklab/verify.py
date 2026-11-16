@@ -38,7 +38,7 @@ from typing import NamedTuple, Optional
 
 import numpy as np
 
-from . import sweep
+from . import oblique, sweep
 from .cut import swept_box, tool_axis
 from .dexel import DEFAULT_RESOLUTION, other_axes
 from .mesh import surface
@@ -143,28 +143,39 @@ def gouges(model, operations, tolerance=TOLERANCE, resolution=None):
     owner = np.full(len(points), -1)
     chord = tolerance / 20.0
     for index, operation in enumerate(operations):
-        k, sigma = tool_axis(operation.axis)
         moves = [(a, b) for a, b, _, _ in segments(operation, chord)]
         if not moves:
             continue
         before = depth.copy()
         starts, ends = (np.array(x) for x in zip(*moves))
+        tilted = oblique.direction(operation.axis)
+        if tilted is None:
+            k, sigma = tool_axis(operation.axis)
+            seen, seen_grid = points, grid
+        else:
+            # a tool axis along none of the part's axes: all as the tool
+            # sees it, its axis +Z there (depths are the same)
+            turn = np.array(oblique.basis(tilted) + (tilted,))
+            k, sigma = 2, 1
+            starts, ends = starts @ turn.T, ends @ turn.T
+            seen = points @ turn.T
+            seen_grid = PointGrid(seen, grid.cell)
         for part in operation.tool.parts:
             low, high = swept_box(part, k, sigma, starts, ends)
-            count = grid.count(low, high)
+            count = seen_grid.count(low, high)
             moves = np.flatnonzero(count)
             if moves.size == 0:
                 continue
             # about PAIRS pairs of a point and a move at a time
             chunk = (np.cumsum(count[moves]) - count[moves]) // PAIRS
             for some in np.split(moves, np.flatnonzero(np.diff(chunk)) + 1):
-                point, move = grid.pairs(low[some], high[some])
+                point, move = seen_grid.pairs(low[some], high[some])
                 move = some[move]
-                bound = _depth(part, k, sigma, starts[move], ends[move], points[point])
+                bound = _depth(part, k, sigma, starts[move], ends[move], seen[point])
                 shallow = bound <= tolerance
                 np.maximum.at(depth, point[shallow], bound[shallow])
                 deep = ~shallow
-                _deepen(depth, part, k, sigma, starts[move[deep]], ends[move[deep]], points, point[deep], bound[deep])
+                _deepen(depth, part, k, sigma, starts[move[deep]], ends[move[deep]], seen, point[deep], bound[deep])
         owner[depth > before] = index
     return Gouges(points, depth, tolerance, owner)
 

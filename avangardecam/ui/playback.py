@@ -52,7 +52,8 @@ from avangardecam.engine import playback as engine_playback
 from avangardecam.model import crashes as model_crashes
 from avangardecam.model import cycle_time, nc
 from avangardecam.model import playback as model_playback
-from avangardecam.model import playback_stock
+from avangardecam.model import playback_stock, tilted
+from avangardecam.ui import postprocessors
 from avangardecam.ui.coin_view import CoinView
 
 _LAST_SPEED = "LastPlaybackSpeed"
@@ -97,7 +98,7 @@ def start(job):
     QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
     try:
         job.Document.recompute()
-        prepared = engine_playback.prepare(job)
+        prepared = engine_playback.prepare(job, postprocessors.last())
         _window = SimulationWindow(job, prepared, FreeCADGui.getMainWindow())
     finally:
         QtWidgets.QApplication.restoreOverrideCursor()
@@ -304,6 +305,8 @@ class _Scene:
         tool = coin.SoSeparator()
         self.place = coin.SoTranslation()
         tool.addChild(self.place)
+        self.turn = coin.SoRotation()  # the tool along the Z of the zero point it works on
+        tool.addChild(self.turn)
         self.cutting = self._solid(CUTTING_COLOR, parent=tool)[1:]
         self.body = self._solid(BODY_COLOR, parent=tool)[1:]
         self.root.addChild(tool)
@@ -372,8 +375,11 @@ class _Scene:
             _set_points(points.point, vertices)
             _set_faces(faces.coordIndex, triangles)
 
-    def set_tip(self, tip):
+    def set_tip(self, tip, turn=None):
+        """The tool's tip there; turn: the quaternion of the zero point it
+        works on (model.tilted.rotation), None: not turned."""
         self.place.translation.setValue(*tip)
+        self.turn.rotation.setValue(*(turn or (0.0, 0.0, 0.0, 1.0)))
 
 
 # -- the widgets ---------------------------------------------------------------------
@@ -602,6 +608,8 @@ class SimulationWindow(QtWidgets.QMainWindow):
         box = QtWidgets.QVBoxLayout(program)
         box.setContentsMargins(0, 0, 0, 0)
         title = QtWidgets.QLabel(tr("Program (.H)"), program)
+        title.setObjectName("AvangardeCamPlayProgramTitle")
+        title.setToolTip(tr(self.prepared.machine))  # the machine whose program this is
         title.setFont(bold)
         box.addWidget(title)
         self.program = QtWidgets.QListWidget(program)
@@ -901,7 +909,7 @@ class SimulationWindow(QtWidgets.QMainWindow):
             self.scene.set_tool(self._tool_meshes(step.tool))
             self.tool_number = step.tool.number
         tip = line.position(t)
-        self.scene.set_tip(tip)
+        self.scene.set_tip(tip, tilted.rotation(line.zero_at(t)))
         segment, share = line.segment_at(t)
         poly = self.polyline
         last = self.first_segment + len(poly.firsts) - 1

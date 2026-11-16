@@ -30,6 +30,7 @@ from avangardecam.engine import ProjectError
 from avangardecam.engine import freecad_cam as cam
 from avangardecam.engine import geometry
 from avangardecam.engine import next_setup as engine
+from avangardecam.ui import postprocessors
 from avangardecam.ui import verify as ui_verify
 
 _LAST_ACCURACY = "LastNextSetupAccuracy"
@@ -209,7 +210,7 @@ def work_out_left(previous, cells):
     worked out with a busy window; ProjectError as engine.next_setup's."""
     doc = previous.Document
     doc.recompute()
-    prepared = engine.prepare_left(previous)
+    prepared = engine.prepare_left(previous, postprocessors.last())
     return busy(tr("Stock left by {}").format(previous.Label), lambda progress: engine.left(prepared, cells, progress))
 
 

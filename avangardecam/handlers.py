@@ -124,7 +124,7 @@ def export_nc(path=None, post=None):
     name = module.program_name(os.path.splitext(os.path.basename(path))[0])
     doc.recompute()
     try:
-        text = post.write(cam.nc_program(doc, name, doc.Label, zeros=True))
+        text = post.write(cam.nc_program(doc, name, doc.Label))
         module.save(text, path)
     except (cam.ProjectError, ValueError, OSError) as exc:
         _error(str(exc))

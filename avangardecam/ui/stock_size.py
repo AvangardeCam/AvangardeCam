@@ -9,7 +9,7 @@ from PySide import QtCore, QtWidgets
 
 from avangardecam import tr
 from avangardecam.engine import ProjectError
-from avangardecam.engine import freecad_cam as cam
+from avangardecam.engine import op_zero
 from avangardecam.engine import stock_size
 from avangardecam.model import stock as model_stock
 from avangardecam.ui import details
@@ -24,8 +24,9 @@ class StockSizeDialog(QtWidgets.QDialog):
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         self.setWindowTitle(tr("Stock size"))
         self.job = job
-        model = stock_size.models_bounds(job)
-        present = cam.stock_bounds(job).size
+        edit = op_zero.stock_edit(job)  # on the active zero point's axes, or on the stock's own
+        model = edit.model
+        present = edit.bounds.size
         layout = QtWidgets.QVBoxLayout(self)
         form = QtWidgets.QFormLayout()
         self.boxes = []
@@ -43,6 +44,10 @@ class StockSizeDialog(QtWidgets.QDialog):
                 details.size_text(model)
             )
         )
+        if edit.own:
+            from avangardecam.ui import stock_dialog
+
+            note.setText(note.text() + " " + stock_dialog.OWN_ZERO_NOTE())
         note.setWordWrap(True)
         layout.addWidget(note)
         buttons = QtWidgets.QDialogButtonBox(

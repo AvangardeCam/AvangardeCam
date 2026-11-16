@@ -147,6 +147,13 @@ cat /tmp/ac.txt
   point; Set 0-Point as default and its Undo, Reset 0-Point; Edit on an operation of another
   zero point opens its window on that zero point; Rotate 0-Point away from the default zero
   point is refused.
+- `test_zero_stock_play.py` (experimental): a contour on the top and one on the right wall
+  (the zero point turned onto it); the Stock window on the wall's zero point works along the
+  axes the user sees and the block changes on the default zero point; at an odd angle the
+  block is drawn as it lies and the Stock window and the details work along the stock's own
+  axes and say so; Play runs the program of the machine that tilts, the tool lying along
+  the wall's Z, the stock cut there too, nothing run into; Verify checks both contours and
+  shows the stock left where the active zero point has the part.
 - `test_measure.py`: CAM > Measure from 0-Point: the top face clicked (away from the
   setup's axes on the zero point), Shift+click adds the front face; the window (not modal)
   shows their smallest and largest X, Y, Z together and the sizes, as FreeCAD's exact box

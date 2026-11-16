@@ -22,6 +22,7 @@ from avangardecam import tr
 from avangardecam.engine import cycle_time as engine_cycle_time
 from avangardecam.engine import freecad_cam as cam
 from avangardecam.model import cycle_time
+from avangardecam.ui import postprocessors
 
 LABEL = QtCore.QT_TRANSLATE_NOOP("AvangardeCam", "Time")
 _COLUMNS = (QtCore.QT_TRANSLATE_NOOP("AvangardeCam", "Operation"), QtCore.QT_TRANSLATE_NOOP("AvangardeCam", "Tool"),
@@ -89,7 +90,7 @@ def calculate(doc):
     _watch()
     doc.recompute()
     try:
-        found = engine_cycle_time.program_times(doc)
+        found = engine_cycle_time.program_times(doc, post=postprocessors.last())
     except Exception as exc:  # ProjectError, ValueError and what FreeCAD raises: shown as the time
         found = exc
     _times[doc.Name] = found

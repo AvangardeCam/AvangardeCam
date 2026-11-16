@@ -69,9 +69,13 @@ Zero ustawione przez Snap-0-Point to **domyślny punkt zerowy** mocowania, czyli
 - **Reset 0-Point**: zero wraca na domyślne.
 - **Make 0-Point active** (prawy klik na operacji): zero przechodzi tam, skąd liczy ta operacja, żeby ją zmienić albo dodać tam kolejne. Operacja z innego zera ma w drzewie dopisek *(other 0-Point)*; **Edit…** na niej najpierw uaktywnia jej zero.
 
-Snap-0-Point i Rotate 0-Point przestawiają całe mocowanie (domyślne zero razem z operacjami, które od niego liczą); używaj ich, gdy zero stoi na domyślnym. Stock też zmieniaj tam: na innym zerze stock jest pokazany jako pudełko wokół tego samego bloku.
+Snap-0-Point i Rotate 0-Point przestawiają całe mocowanie (domyślne zero razem z operacjami, które od niego liczą); używaj ich, gdy zero stoi na domyślnym.
 
-Play, Verify i Cycle time puszczają mocowanie na jego presecie: operacje z przesuniętego zera są pokazane na swoim miejscu, a operacje z pochylonego zera są tam na razie pomijane.
+**Stock ma własny punkt zerowy**: domyślny. To jeden blok, gdziekolwiek stoi zero. Możesz go zmieniać na każdym zerze: na zerze obróconym o ćwierć obrotu (ściana bloku) okno Stock pokazuje wymiary i naddatki wzdłuż osi, które widzisz, a to, co wpiszesz, jest przeliczane na zero domyślne. Na zerze pod innym kątem blok nie jest pudełkiem wzdłuż widzianych osi, więc okno Stock pokazuje go wzdłuż własnych osi stocka i to mówi; widok 3D rysuje blok tak, jak leży.
+
+Widok 3D, kostka nawigacji i widoki Top / Front / Right zawsze idą za aktywnym zerem.
+
+**Play, Verify i Cycle time** puszczają każdą operację z jej własnego zera: narzędzie jest rysowane pochylone tak jak to zero, stock jest zbierany z tej strony, a Verify sprawdza każdą operację z detalem. Gdy jakaś operacja jest na obróconym zerze, puszczany jest program maszyny z pochylaniem (Play pokazuje listę tego programu); inaczej program maszyny wybranej przy ostatnim eksporcie. Drogi obracanej głowicy między operacjami nie ma w programie, więc nie jest rysowana ani liczona do czasu cyklu.
 
 
 ### Stock
@@ -174,6 +178,10 @@ Kliknij **Play**. Program aktywnego Setupu jest odtwarzany tak, jak wykona go ma
 ## 7. Adaptive clearing
 
 Adaptive usuwa materiał zgrubnie, ze stałym obciążeniem narzędzia: mały odstęp boczny i głębokie przejścia. Nigdy nie wcina się w model.
+
+> **Sprawdź, czy Adaptive działa dobrze.** Okno i Details mówią to na czerwono: przed
+> obróbką obejrzyj ścieżkę w **Play** albo **Verify**. Czy wszystko jest zebrane i czy
+> narzędzie jedzie tylko tam, gdzie powinno?
 
 1. Bez zaznaczania niczego kliknij **Adaptive**: obrabiany jest obszar wokół całego modelu.
    Możesz też zaznaczyć dna, wtedy obrabiany jest tylko ich obszar.

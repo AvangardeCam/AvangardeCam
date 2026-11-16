@@ -8,7 +8,9 @@ own; engine.op_zero does the work.
   goes to the one the operation counts from,
 - an operation that counts from another zero point than the active one
   is marked in the list and shows where it counts from instead of its
-  values; editing it makes its zero point the active one first.
+  values; editing it makes its zero point the active one first,
+- the stock's block drawn as it lies where it is no box on the active
+  zero point's axes (show_block; ui.scene calls it).
 """
 
 import FreeCAD
@@ -22,6 +24,8 @@ from avangardecam.model import op_zero as model
 from avangardecam.ui import details
 
 STATUS_TIMEOUT_MS = 4000
+_BLOCK_NAME = "AvangardeCamStockBlock"
+BLOCK_TRANSPARENCY = 0.85  # as the stock's box (engine.freecad_cam._show_stock)
 
 
 def _status(message):
@@ -171,3 +175,62 @@ class ParkedView(details.DetailsView):
             tr("This operation counts from another zero point than the active one and keeps it. Make its zero point active to see and change its values, or to add operations there.")  # fmt: skip
         )
         self.add_button(tr("Make 0-Point active"), lambda: make_active(self.op), "AvangardeCamMakeZeroActiveButton")
+
+
+# -- the stock's block at an odd angle -------------------------------------------------
+
+
+def show_block(job, on):
+    """Where the stock's block is no box on the active zero point's axes
+    (the zero point turned at an odd angle to the stock's own), FreeCAD's
+    stock is the larger box around it: draw the block as it lies instead
+    (in the setup's node, which ui.scene draws on the zero point)."""
+    vo = getattr(job, "ViewObject", None)
+    if vo is None:
+        return
+    root = vo.RootNode
+    for i in reversed(range(root.getNumChildren())):
+        if root.getChild(i).getName() == _BLOCK_NAME:
+            root.removeChild(i)
+    seen = engine.block_seen(job) if on else None
+    if seen is None:
+        return
+    from pivy import coin
+
+    bounds, place = seen
+    stock_vo = getattr(job.Stock, "ViewObject", None)
+    color = tuple(stock_vo.ShapeColor[:3]) if stock_vo is not None and hasattr(stock_vo, "ShapeColor") else (0.8, 0.8, 0.8)
+    if stock_vo is not None and stock_vo.Visibility:
+        stock_vo.Visibility = False
+    node = coin.SoSeparator()
+    node.setName(_BLOCK_NAME)
+    pick = coin.SoPickStyle()
+    pick.style = coin.SoPickStyle.UNPICKABLE
+    node.addChild(pick)
+    move = coin.SoTransform()
+    move.translation.setValue(place.Base.x, place.Base.y, place.Base.z)
+    move.rotation.setValue(*place.Rotation.Q)
+    node.addChild(move)
+    centre = coin.SoTranslation()
+    centre.translation.setValue(
+        (bounds.x_min + bounds.x_max) / 2.0, (bounds.y_min + bounds.y_max) / 2.0, (bounds.z_min + bounds.z_max) / 2.0
+    )
+    node.addChild(centre)
+    cube = coin.SoCube()
+    cube.width, cube.height, cube.depth = bounds.size
+    edges = coin.SoSeparator()
+    style = coin.SoDrawStyle()
+    style.style = coin.SoDrawStyle.LINES
+    light = coin.SoLightModel()
+    light.model = coin.SoLightModel.BASE_COLOR
+    black = coin.SoBaseColor()
+    black.rgb.setValue(0.0, 0.0, 0.0)
+    for child in (style, light, black, cube):
+        edges.addChild(child)
+    node.addChild(edges)
+    material = coin.SoMaterial()
+    material.diffuseColor.setValue(*color)
+    material.transparency.setValue(BLOCK_TRANSPARENCY)
+    node.addChild(material)
+    node.addChild(cube)
+    root.addChild(node)

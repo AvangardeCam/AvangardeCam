@@ -11,8 +11,6 @@ NC program gives each operation's zero point from the setup's default
 one, the machine's preset.
 """
 
-import FreeCAD
-
 from avangardecam.engine import freecad_cam as cam
 from avangardecam.engine import geometry
 from avangardecam.engine import op_zero

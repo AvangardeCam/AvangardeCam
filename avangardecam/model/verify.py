@@ -5,7 +5,10 @@ stock model (avangardecam.stocklab), then checked against the part.
 
 Everything is in the setup's coordinates: its stock is a box along them
 and the tool comes from +Z, so a zero point turned through any angle
-works. The moves are those the machine makes (model.machine), not
+works. An operation on another zero point of the setup (model.tilted) is
+cut from where its tool stands there: its moves are turned into the
+setup's coordinates, its tool axis is that zero point's Z. The moves are
+those the machine makes (model.machine), not
 FreeCAD's path: the radius compensation worked out as the TNC does it, a
 drilling cycle down at once (its pecks take nothing more), the way
 between operations as post.heidenhain writes it.
@@ -30,8 +33,9 @@ from typing import NamedTuple, Optional
 import numpy as np
 
 from avangardecam import stocklab
-from avangardecam.model import crashes, nc, start_stock
+from avangardecam.model import crashes, nc, start_stock, tilted
 from avangardecam.model.machine import RETRACT_Z_MM, TOOL_CHANGE_Z_MM, Machine, machine_segments
+from avangardecam.stocklab import oblique
 from avangardecam.stocklab import tools as stock_tools
 from avangardecam.stocklab import program as stock_program
 from avangardecam.stocklab.cut import CHORD
@@ -61,7 +65,8 @@ _SAME = 1e-6  # mm: points this close are the same
 
 
 class PlannedHole(NamedTuple):
-    """A hole of a thread milling, in the setup's coordinates."""
+    """A hole of a thread milling, in the coordinates of the zero point
+    its operation counts from (Planned.zero)."""
 
     centre: tuple  # (x, y, z) of its top
     bottom: float  # z of the tool's tip at the deepest
@@ -79,6 +84,7 @@ class Planned(NamedTuple):
     holes: tuple = ()  # PlannedHole: a thread milling's, to check they are there
     teeth_mm: float = 0.0  # a thread milling: how deep the thread mill's teeth cut
     shank: object = None  # the tool's neck and shank (model.crashes.shank_tool), None: not known
+    zero: object = None  # the zero point it counts from (nc.Operation.zero), None: the setup's
 
 
 class Collision(NamedTuple):
@@ -106,7 +112,7 @@ class HoleCheck(NamedTuple):
     mill's teeth (see the module's docstring)."""
 
     operation: str
-    centre: tuple  # (x, y, z) of its top
+    centre: tuple  # (x, y, z) of its top, in the setup's coordinates
     volume_mm3: Optional[float]  # taken by the thread mill's body: 0 when none, None when not checked
     body_mm: float  # the diameter of the body checked with (0: none, the thread mill no wider than its teeth)
 
@@ -200,10 +206,11 @@ def _thread_holes(moves, radius):
     return tuple(result)
 
 
-def plan(setup, tools, retract_z=RETRACT_Z_MM, change_z=TOOL_CHANGE_Z_MM):
+def plan(setup, tools, retract_z=RETRACT_Z_MM, change_z=TOOL_CHANGE_Z_MM, anew=False):
     """The operations of a setup (nc.Setup) as the stock model cuts them
-    (Planned); tools: model.tools.Tool by tool number."""
-    machine = Machine(retract_z, change_z)
+    (Planned); tools: model.tools.Tool by tool number; anew: a machine
+    that turns its head (model.machine.Machine)."""
+    machine = Machine(retract_z, change_z, anew=anew)
     result = []
     for op in setup.operations:
         tool = tools.get(op.tool.number)
@@ -212,10 +219,15 @@ def plan(setup, tools, retract_z=RETRACT_Z_MM, change_z=TOOL_CHANGE_Z_MM):
         notes = []
         elements = machine.elements(op)
         segments = machine_segments(elements, tool.diameter_mm / 2.0, notes)
-        operation = stocklab.Operation(stock_tool(tool), "+Z", _stock_moves(segments), op.label)
-        planned = Planned(op.label, op.kind, operation, tuple(dict.fromkeys(notes)), shank=crashes.shank_tool(tool))
+        moves = _stock_moves(segments)  # counted from the operation's zero point
+        operation = stocklab.Operation(
+            stock_tool(tool), tilted.axis(op.zero), [tilted.stock_move(op.zero, m) for m in moves], op.label
+        )
+        planned = Planned(
+            op.label, op.kind, operation, tuple(dict.fromkeys(notes)), shank=crashes.shank_tool(tool), zero=op.zero
+        )
         if op.kind == nc.THREAD_MILLING:
-            planned = planned._replace(holes=_thread_holes(operation.moves, tool.diameter_mm / 2.0), teeth_mm=teeth_depth(tool))
+            planned = planned._replace(holes=_thread_holes(moves, tool.diameter_mm / 2.0), teeth_mm=teeth_depth(tool))
         result.append(planned)
     return result
 
@@ -224,21 +236,46 @@ def plan(setup, tools, retract_z=RETRACT_Z_MM, change_z=TOOL_CHANGE_Z_MM):
 
 
 def _move_boxes(operation):
-    """The box each move's tool (from +Z) sweeps through: (low, high), (n, 3);
-    an arc's of its whole circle."""
+    """The box each move's tool sweeps through: (low, high), (n, 3); an
+    arc's of its whole circle (round its axis: the tool's)."""
+    d = oblique.unit(operation.axis)
+    across = np.sqrt(np.clip(1.0 - d * d, 0.0, None))  # how far a circle round d reaches along each axis
     low, high = [], []
     for move in operation.moves:
         a, b = move.start, move.end
         lo, hi = np.minimum(a, b), np.maximum(a, b)
         if isinstance(move, stocklab.Arc):
-            c = move.center[:2]
-            r = max(float(np.hypot(*(a[:2] - c))), float(np.hypot(*(b[:2] - c))))
-            lo[:2], hi[:2] = c - r, c + r
+            # the points of the arc's axis as high as its ends
+            ca = move.center + float((a - move.center) @ d) * d
+            cb = move.center + float((b - move.center) @ d) * d
+            r = max(float(np.linalg.norm(a - ca)), float(np.linalg.norm(b - cb)))
+            lo = np.minimum(lo, np.minimum(ca, cb) - r * across)
+            hi = np.maximum(hi, np.maximum(ca, cb) + r * across)
         low.append(lo)
         high.append(hi)
-    reach = np.array((operation.tool.radius, operation.tool.radius, 0.0))
-    up = np.array((0.0, 0.0, operation.tool.length))
-    return np.array(low).reshape(-1, 3) - reach, np.array(high).reshape(-1, 3) + reach + up
+    reach = operation.tool.radius * across
+    up = operation.tool.length * d
+    return (np.array(low).reshape(-1, 3) - reach + np.minimum(up, 0.0),
+            np.array(high).reshape(-1, 3) + reach + np.maximum(up, 0.0))  # fmt: skip
+
+
+def _hole_box(stock, hole, zero):
+    """The box of the stock (Bounds) a thread hole's own stock fills, in
+    the setup's coordinates: round the hole, from the tip's deepest out
+    to where the stock ends on the tool's side; (lower, upper)."""
+    x, y, _top = hole.centre
+    low = np.array((stock.x_min, stock.y_min, stock.z_min))
+    high = np.array((stock.x_max, stock.y_max, stock.z_max))
+    if zero is None:
+        return (np.maximum((x - hole.reach, y - hole.reach, hole.bottom), low),
+                np.minimum((x + hole.reach, y + hole.reach, stock.z_max), high))  # fmt: skip
+    corners = np.array([(cx, cy, cz) for cx in (low[0], high[0]) for cy in (low[1], high[1]) for cz in (low[2], high[2])])
+    out = float(tilted.seen(zero, corners)[:, 2].max())  # the stock's end as the zero point sees it
+    box = tilted.points(zero, [
+        (cx, cy, cz) for cx in (x - hole.reach, x + hole.reach) for cy in (y - hole.reach, y + hole.reach)
+        for cz in (hole.bottom, max(out, hole.bottom))
+    ])  # fmt: skip
+    return np.maximum(box.min(axis=0), low), np.minimum(box.max(axis=0), high)
 
 
 def _hole_checks(stock, planned, index, start=None):
@@ -253,17 +290,16 @@ def _hole_checks(stock, planned, index, start=None):
     tool = p.operation.tool
     inside = tool.radius - p.teeth_mm
     if inside <= 0.0:
-        return [HoleCheck(p.label, h.centre, None, 0.0) for h in p.holes]
+        return [HoleCheck(p.label, tilted.point(p.zero, h.centre), None, 0.0) for h in p.holes]
     cell = inside / BODY_CELLS
     body = stock_tools.flat_end_mill(2.0 * (inside - CHORD * cell), tool.length)
     before = [(q.operation, _move_boxes(q.operation)) for q in planned[:index]]
     result = []
     for hole in p.holes:
-        x, y, _top = hole.centre
-        lower = np.maximum((x - hole.reach, y - hole.reach, hole.bottom), (stock.x_min, stock.y_min, stock.z_min))
-        upper = np.minimum((x + hole.reach, y + hole.reach, stock.z_max), (stock.x_max, stock.y_max, stock.z_max))
+        lower, upper = _hole_box(stock, hole, p.zero)
+        centre = tilted.point(p.zero, hole.centre)
         if np.any(upper - lower < cell):  # out of the stock
-            result.append(HoleCheck(p.label, hole.centre, 0.0, body.radius * 2.0))
+            result.append(HoleCheck(p.label, centre, 0.0, body.radius * 2.0))
             continue
         local = start_stock.block(stock, start, max(1, int(math.ceil(float((upper - lower).max()) / cell))), lower, upper)
         # only the moves that reach the hole's stock: the others take nothing
@@ -276,7 +312,7 @@ def _hole_checks(stock, planned, index, start=None):
         feed = [(a, b) for a, b, rapid, number in stock_program.segments(p.operation, CHORD * cell) if number in mine and not rapid]
         taken = stocklab.cut_lines(local, body, p.operation.axis, [a for a, _ in feed], [b for _, b in feed]) if feed else 0.0
         touch = stock_program.TOUCH * float(np.prod(local.spacing))
-        result.append(HoleCheck(p.label, hole.centre, taken if taken > touch else 0.0, body.radius * 2.0))
+        result.append(HoleCheck(p.label, centre, taken if taken > touch else 0.0, body.radius * 2.0))
     return result
 
 
@@ -285,11 +321,12 @@ def _holes_red(colors, vertices, planned, holes, cell):
     found = {(h.operation, h.centre) for h in holes if h.volume_mm3}
     for p in planned:
         for hole in p.holes:
-            if (p.label, hole.centre) not in found:
+            if (p.label, tilted.point(p.zero, hole.centre)) not in found:
                 continue
             x, y, top = hole.centre
-            near = (np.hypot(vertices[:, 0] - x, vertices[:, 1] - y) <= hole.reach + 1.5 * cell) & (
-                vertices[:, 2] >= hole.bottom - 1.5 * cell) & (vertices[:, 2] <= top + 1.5 * cell)  # fmt: skip
+            seen = tilted.seen(p.zero, vertices)  # as the hole's zero point sees them
+            near = (np.hypot(seen[:, 0] - x, seen[:, 1] - y) <= hole.reach + 1.5 * cell) & (
+                seen[:, 2] >= hole.bottom - 1.5 * cell) & (seen[:, 2] <= top + 1.5 * cell)  # fmt: skip
             colors[near] = stock_verify.RED
     return colors
 

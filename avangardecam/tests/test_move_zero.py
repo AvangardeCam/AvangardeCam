@@ -240,7 +240,7 @@ class TestEngine(unittest.TestCase):
         after = cutting(second)
         self.assertPoint(after[:4], (before[0] + 20, before[1] + 20, before[2] + 10, before[3] + 10))
         self.assertAlmostEqual(after[4], 1.0, msg="1 mm below the lines, which are 2 mm above the zero point now")
-        program = self.cam.nc_program(self.doc, "MOVED", zeros=True)
+        program = self.cam.nc_program(self.doc, "MOVED")
         self.assertPoint(tuple(program.setups[0].stock), (-21, -11, -12, 21, 11, 1), "the stock from the preset")
         self.assertEqual(program.setups[0].operations[1].zero.origin, (-20.0, -10.0, -2.0))
 

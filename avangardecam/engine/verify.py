@@ -14,9 +14,9 @@ import numpy as np
 
 from avangardecam.engine import ProjectError
 from avangardecam.engine import freecad_cam as cam
-from avangardecam.engine import next_setup
+from avangardecam.engine import op_zero
 from avangardecam.model import verify as model_verify
-from avangardecam.post import heidenhain
+from avangardecam.post import machines
 
 # how far the part's triangles may be from its faces: half of what counts
 # as too deep, so a hole's chords do not make its wall look cut (a tenth
@@ -37,9 +37,10 @@ class Prepared(NamedTuple):
 
 
 def model_mesh(job, deflection=DEFLECTION_MM):
-    """The part of a setup as triangles in the setup's coordinates; worked
-    out again only when a shape of its model changed."""
-    key = (job.Document.Name, job.Name, deflection,
+    """The part of a setup as triangles in the setup's coordinates (its
+    default zero point's); worked out again only when a shape of its model
+    changed."""
+    key = (job.Document.Name, job.Name, deflection, str(op_zero.to_default(job)),
            tuple((c.Name, c.Shape.hashCode(), str(c.Placement)) for c in job.Model.Group if getattr(c, "Shape", None) is not None))  # fmt: skip
     if key in _meshes:
         return _meshes[key]
@@ -55,26 +56,30 @@ def model_mesh(job, deflection=DEFLECTION_MM):
     if not triangles:
         raise ProjectError("{} has no model to check the program against.".format(job.Label))
     _meshes.clear()
-    _meshes[key] = np.array(vertices, dtype=float), np.array(triangles, dtype=np.int64)
+    _meshes[key] = op_zero.on_default(job, np.array(vertices, dtype=float)), np.array(triangles, dtype=np.int64)
     return _meshes[key]
 
 
-def prepare(job):
-    """Everything model.verify.verify needs for the active operations of a setup."""
+def prepare(job, post=None):
+    """Everything model.verify.verify needs for the active operations of a
+    setup. post: the machine's postprocessor (post.machines) whose program
+    is checked, None: the default one (machines.able)."""
     doc = job.Document
     index = cam.setups(doc).index(job)
-    setup = cam.nc_program(doc, "VERIFY").setups[index]
+    program = cam.nc_program(doc, "VERIFY")
+    setup = program.setups[index]
+    machine = machines.able(post, program)
     if not setup.operations:
         raise ProjectError("{} has no active operations to verify.".format(job.Label))
     if setup.stock is None:
         raise ProjectError("{} has no stock.".format(job.Label))
     tools = {t.number: t.tool for t in cam.project_tools(job)}
     try:
-        planned = model_verify.plan(setup, tools, heidenhain.BRIDGEPORT_V1000.retract_z_mm)
+        planned = model_verify.plan(setup, tools, machine.retract_z_mm, machine.start_z_mm, machine.anew)
     except ValueError as e:
         raise ProjectError(str(e))
     vertices, triangles = model_mesh(job)
-    return Prepared(job.Label, setup.stock, vertices, triangles, planned, next_setup.start_mesh(job))
+    return Prepared(job.Label, setup.stock, vertices, triangles, planned, op_zero.start_mesh(job))
 
 
 def run(prepared, resolution=model_verify.stocklab.DEFAULT_RESOLUTION, progress=None):

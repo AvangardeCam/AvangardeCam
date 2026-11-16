@@ -173,6 +173,8 @@ def dialog1(dialog):
     check(dialog.objectName() == "AvangardeCamAdaptiveDialog", "the Adaptive window opens")
     area = field(dialog, "AvangardeCamAdaptiveArea").text()
     check(area == "Around the whole model (Body)", "nothing picked: the whole model: " + area)
+    warning = field(dialog, "AvangardeCamAdaptiveCheck")
+    check(warning is not None and warning.text().startswith("Attention: check that Adaptive works well"), "the window warns to check it")  # fmt: skip
     depth = field(dialog, "AvangardeCamAdaptiveDepth")
     check(raw(depth) == 0.0, "Z-Depth from the model's lowest floor, its top: {}".format(raw(depth)))
     levels = field(dialog, "AvangardeCamAdaptiveLevels")
@@ -226,6 +228,8 @@ def step3():
     check(found == (body(), operations().Adaptive(-12.0, 4.0)), "its values: {}".format(found))
     check(lowest(OP) == -12.0, "down to Z-12: {}".format(lowest(OP)))
     r = rows()
+    warning = field(panel().view, "AvangardeCamAdaptiveCheck")
+    check(warning is not None and warning.isVisible(), "details: the warning to check it")
     check(r.get("Area") == "Around the whole model (Body)", "details: area {}".format(r.get("Area")))
     check(r.get("Tool", "").startswith("T5 "), "details: tool {}".format(r.get("Tool")))
     check(r.get("Z levels") == "Z +0.00, -3.00, -7.00, -11.00, -12.00 (5 levels)", "details: levels {}".format(r.get("Z levels")))  # fmt: skip

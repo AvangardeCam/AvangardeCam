@@ -72,22 +72,37 @@ on one zero point, so `engine/op_zero.py` works on one at a time: the operations
 zero point are *parked* (their zero point in `AvangardeZero`, their path kept; a guard on
 FreeCAD's `ObjectOp.execute` keeps FreeCAD from computing them on the wrong zero point) and
 come alive when their zero point is made the active one (`activate`: Make 0-Point active,
-Reset 0-Point, or editing them). The stock stays the same block. A setup whose zero point was
-never moved away has none of this and works as before. Snap-0-Point and Rotate 0-Point move
-the setup itself (its default zero point with what counts from it) and start from the default.
+Reset 0-Point, or editing them). A setup whose zero point was never moved away has none of
+this and works as before. Snap-0-Point and Rotate 0-Point move the setup itself (its default
+zero point with what counts from it) and start from the default.
+
+The **stock has a zero point of its own**: the one its block is a box on (the default zero
+point it was made on; kept in `AvangardeStockZero`, the block in `AvangardeBlock`). On another
+zero point FreeCAD's stock is the box around that block: the same block a quarter turn away, a
+larger box at an odd angle, where the 3D view draws the block itself (`ui/op_zero.show_block`).
+A stock typed on another zero point is the block on the default one, counted from where it was
+typed (`op_zero.stock_changed`); at an odd angle the stock's windows work along the stock's own
+axes and say so (`op_zero.stock_edit`, `set_stock`).
 
 For the NC program `op_zero.setup_program` visits each zero point, reads its operations there
-and comes back (a dropped transaction: no undo step). `freecad_cam.nc_program(zeros=True)`
-gives each operation its zero point from the preset (`Operation.zero`: origin and axes) for a
-postprocessor that shifts and tilts; without `zeros` every operation is in the preset's
-coordinates, as Play, Verify and the cycle time run a setup, and an operation on a tilted
-zero point is left out there (said in the report view).
+and comes back (a dropped transaction: no undo step). `freecad_cam.nc_program` gives each
+operation its zero point from the preset (`Operation.zero`: origin and axes) and its moves
+counted from it: a postprocessor shifts and tilts there, and Play, Verify, the cycle time and
+the stock a setup leaves run it from there (`model/tilted.py`): the machine's moves are worked
+out on the operation's own zero point (`model/machine.py`: the tool high on the preset before
+the zero point is shifted; a machine that turns its head starts every operation anew), then
+turned into the preset's coordinates, where the stock and the part are, with the tool axis of
+that zero point. `post/machines.py` says which machine's program is run: the one chosen for
+the export, or one that tilts when an operation is on a turned zero point.
 
 ## Simulation and checking
 
 - `stocklab/`: material removal on a tri-dexel grid (numpy, no FreeCAD), used by **Play**
   (separate window, stock removed live, program line by line), **Verify** (stock against the
-  model) and the stock of a next setup.
+  model) and the stock of a next setup. The tool axis is along X, Y or Z of the stock
+  (`cut.py`, `sweep.py`), or, experimental, along any direction (`oblique.py`: the tool as
+  cones, what a cone takes off a ray worked out exactly; the same cut as `cut.py` makes where
+  both can).
 - `model/crashes.py`: rapid moves into material, holder and neck collisions.
 - `model/cycle_time.py`: cycle time from the machine's dynamics.
 

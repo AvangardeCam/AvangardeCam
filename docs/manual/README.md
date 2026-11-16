@@ -67,9 +67,13 @@ The zero point Snap-0-Point gives is the setup's **default zero point**: the mac
 - **Reset 0-Point**: the zero point goes back to the default one.
 - **Make 0-Point active** (right click on an operation): the zero point goes to the one that operation counts from, to change it or to add operations there. An operation on another zero point is marked *(other 0-Point)* in the tree; **Edit…** on it makes its zero point active first.
 
-Snap-0-Point and Rotate 0-Point move the whole setup (its default zero point with the operations on it); use them while the zero point is on the default one. Change the stock there too: on another zero point the stock is shown as the box around the same block.
+Snap-0-Point and Rotate 0-Point move the whole setup (its default zero point with the operations on it); use them while the zero point is on the default one.
 
-Play, Verify and Cycle time run a setup on its preset: operations on a shifted zero point are shown in their place, operations on a tilted zero point are left out there for now.
+The **stock has a zero point of its own**: the default one. It is one block, wherever the zero point stands. You can change it on any zero point: on one a quarter turn away (a wall of the block) the Stock window shows its sizes and allowances along the axes you see, and what you type is counted back to the default zero point. On a zero point at an odd angle the block is no box along the axes you see, so the Stock window shows it along the stock's own axes and says so; the 3D view draws the block as it lies.
+
+The 3D view, its navigation cube and the Top / Front / Right views always follow the zero point that is active.
+
+**Play, Verify and Cycle time** run every operation from its own zero point: the tool is drawn tilted as that zero point is, the stock is cut from that side, and Verify checks each operation against the part there. When an operation is on a turned zero point they run the program of the machine that tilts (Play lists that program); otherwise the program of the machine chosen in the last export. The way of a turning head between two operations is not in the program, so it is not drawn and not in the cycle time.
 
 ### Stock
 
@@ -171,6 +175,10 @@ Click **Play**. The active setup's program is played as the machine runs it, wit
 ## 7. Adaptive clearing
 
 Adaptive roughs out material with an even load on the tool: a small step over and deep cuts. It never cuts into the model.
+
+> **Check that Adaptive works well.** Its window and its Details say so in red: before
+> cutting, look at the path in **Play** or **Verify**. Is everything cleared, does the tool
+> go only where it should?
 
 1. Click **Adaptive** with nothing selected to clear around the whole model.
    Select floors first to clear only their area.
