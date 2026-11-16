@@ -17,10 +17,8 @@ the new Y by b, about the new X by a).
 """
 
 import math
-from dataclasses import replace
 
 from avangardecam.model import frame as model_frame
-from avangardecam.model import nc
 
 # axes and angles this close are the same (rounding noise of rotations)
 _NOISE = 1e-9
@@ -169,6 +167,12 @@ def is_preset(zero):
     return zero is None or (is_shift(zero) and zero.origin == (0.0, 0.0, 0.0))
 
 
+def along_axes(zero):
+    """Whether a zero point's axes go along the preset's (turned by
+    quarter turns at most): a box on one is a box on the other."""
+    return zero is None or all(max(abs(c) for c in axis) == 1.0 for axis in (zero.x_axis, zero.y_axis, zero.z_axis))
+
+
 def is_level(zero):
     """Whether the tool stands as on the preset (the zero point is shifted
     and turned about Z at most)."""
@@ -185,66 +189,3 @@ def turn_text(zero):
     """ "A+0 B+90 C+0" of a zero point from the preset."""
     turn = NO_TURN if zero is None else turn_of((zero.x_axis, zero.y_axis, zero.z_axis))
     return " ".join("{}{:+g}".format(axis, round(value, 3) + 0.0) for axis, value in zip("ABC", turn))
-
-
-# -- a program on the preset alone -------------------------------------------------
-
-
-def on_preset(op):
-    """The operation with its moves in the preset's coordinates, for what
-    runs a setup on one zero point (the simulation, the cycle time). Only
-    for a level zero point: a tilted tool is another machine move."""
-    zero = op.zero
-    if zero is None:
-        return op
-    if not is_level(zero):
-        raise ValueError("{} is on a tilted zero point.".format(op.label))
-    ox, oy, oz = zero.origin
-    (cx, sx, _), (_, _, _) = zero.x_axis, zero.y_axis
-    turned_ = not is_shift(zero)
-
-    def xy(x, y):
-        return (ox + cx * x - sx * y, oy + sx * x + cx * y)
-
-    moves = []
-    at = [None, None]
-    for move in op.moves:
-        if move.x is not None:
-            at[0] = move.x
-        if move.y is not None:
-            at[1] = move.y
-        if not turned_:
-            x = None if move.x is None else move.x + ox
-            y = None if move.y is None else move.y + oy
-        elif (move.x is None and move.y is None) or None in at:
-            x = y = None
-        else:
-            x, y = xy(*at)
-        moves.append(
-            move._replace(
-                x=x,
-                y=y,
-                z=None if move.z is None else move.z + oz,
-                center=None if move.center is None else xy(*move.center),
-            )
-        )
-    cycle = op.cycle
-    if cycle is not None:
-        holes = tuple(
-            hole._replace(x=xy(hole.x, hole.y)[0], y=xy(hole.x, hole.y)[1], surface_z=hole.surface_z + oz)
-            for hole in cycle.holes
-        )
-        cycle = replace(cycle, holes=holes)
-    return replace(op, moves=tuple(moves), cycle=cycle, zero=None)
-
-
-def setup_on_preset(setup):
-    """(the setup with every operation on the preset, the labels of the
-    operations left out because their zero point is tilted)."""
-    kept, left_out = [], []
-    for op in setup.operations:
-        if is_level(op.zero):
-            kept.append(on_preset(op))
-        else:
-            left_out.append(op.label)
-    return replace(setup, operations=tuple(kept)), tuple(left_out)

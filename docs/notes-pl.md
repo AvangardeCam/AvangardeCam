@@ -156,11 +156,19 @@ współrzędnych dla operacji. Dlatego:
     albo stock mogły się zmienić), przestawia klony, dopasowuje stock, `_sync_operations`
     (pomija zaparkowane). Wołają to: Move 0-Point, Reset 0-Point, Make 0-Point active
     (menu operacji), Edit / Change tool na operacji z innego zera.
-  - **Stock zostaje tym samym blokiem**: przy wyjściu z zera domyślnego zapamiętywany jest
-    blok w jego układzie (`AvangardeBlock`, naddatki w `AvangardeDefaultStock`); na innym
-    zerze stock to pudełko opisane na tym bloku (dokładnie ten sam blok przy obrotach co
-    90°, większe pudełko przy innych kątach). Zmiana stocka na innym zerze niż domyślne
-    nie wraca do domyślnego: stock zmieniać na zerze domyślnym.
+  - **Stock ma własny punkt zerowy** (user, 2026-11-16: „stock z własnym punktem zero; jak
+    ktoś zrobi stock w innym miejscu, użyć zera domyślnego, liczonego z obecnego”):
+    `AvangardeStockZero` = zero, na którego osiach blok jest pudełkiem (domyślne, na którym
+    powstał), blok w jego układzie w `AvangardeBlock`, naddatki w `AvangardeDefaultStock`.
+    Na innym zerze stock FreeCADa to pudełko opisane na bloku (ten sam blok przy obrotach
+    co 90°, większe pudełko przy innych kątach; wtedy widok rysuje sam blok,
+    `ui/op_zero.show_block`, a stock FreeCADa jest ukryty). Zmiana stocka idzie przez
+    `cam.set_stock` → `op_zero.stock_changed`: wpisany na zerze o osiach wzdłuż domyślnego
+    jest przeliczany na blok zera domyślnego (dokładnie). Pod innym kątem okna stocka (Stock,
+    Details, Stock size) pracują wzdłuż własnych osi stocka i to piszą (`stock_edit`,
+    `set_stock`). Set 0-Point as default pod innym kątem nie rusza bloku: stock zostaje przy
+    swoim zerze, BLK FORM to pudełko opisane, a symulacja tnie sam blok (`_tilted_block`
+    jako siatka startowa).
   - **5 osi w oknie Move 0-Point**: pole „5 axes” odsłania „Z out of the wall” (Select wall
     obraca Z na zewnątrz ściany najkrótszym obrotem, `turn_onto`: ściana +X = 90° wokół Y,
     jak SPB90 w programach warsztatu) i pola „Turn about X / Y / Z”. Kąty to kąty
@@ -173,10 +181,39 @@ współrzędnych dla operacji. Dlatego:
     po staremu.
   - **Program NC**: `op_zero.setup_program` objeżdża zera (aktywne pierwsze), czyta operacje
     tam, gdzie są policzone, i wraca; z włączonym undo to porzucona transakcja (bez kroku
-    undo, bez ponownego liczenia). `nc_program(zeros=True)` daje `Operation.zero` (Frame
-    względem presetu) dla postprocesora; bez `zeros` wszystko jest w układzie presetu (Play,
-    Verify, czas cyklu), a operacje z pochylonego zera są tam pomijane (ostrzeżenie w
-    report view) — tri-dexel umie tylko narzędzie wzdłuż Z. BLK FORM zawsze z zera domyślnego.
+    undo, bez ponownego liczenia). `nc_program` daje `Operation.zero` (Frame względem
+    presetu) i ruchy liczone od tego zera. BLK FORM zawsze z zera domyślnego.
+  - **Symulacja 5 osi** (user, 2026-11-16; `model/tilted.py`, `model/crashes_tilted.py`,
+    `stocklab/oblique.py`, `tests/test_tilted.py`, `tests_gui/test_zero_stock_play.py`):
+    Play, Verify, czas cyklu i stock dla następnego mocowania puszczają każdą operację z jej
+    zera. Ruchy maszyny liczone są w układzie operacji (kompensacja promienia, cykl wiercenia
+    bez zmian), potem przenoszone do układu presetu, gdzie leży stock i detal; oś narzędzia
+    = Z tego zera. `stocklab` tnie narzędziem wzdłuż X/Y/Z stocka starym kodem (ściany
+    bloku), a pod dowolnym kątem nowym `oblique.py`: narzędzie jako stożki, przedział
+    zbierany z promienia liczony dokładnie (kwadryka w (t, s) + cztery proste; ekstrema w
+    kilkunastu punktach). Zgodność ze starym kodem dla osi prostych co do 1e-6, pochylone
+    w granicach 0,5 % objętości. Kule i torusy jako najwyżej 12 cięciw na ćwiartkę
+    (0,2 % promienia), w stocku tyle, żeby cięciwa zostawiała do 1/20 komórki
+    (`CHORD_CELLS`); wysoki stożek cięty w kawałkach o wysokości średnicy (`PIECE_CELLS`).
+    Szybkość (zmierzone 2026-11-16, 4 rdzenie, stock 250 komórek, frez Ø8, ruchy 1 mm):
+    pod dowolnym kątem ok. 1,5–2 ms na ruch frezem płaskim i ok. 5 ms z promieniem naroża,
+    wzdłuż osi stocka (ściany pod 90°) 0,1–0,3 ms. Czas idzie w `oblique.interval`
+    (każdy promień pod narzędziem przy każdym ruchu, 14 punktów kandydatów); wątki nie
+    pomogły (sprawdzone), do przyspieszenia zostaje tańszy wzór dla walca albo odsiew
+    promieni, z których poprzedni ruch już wszystko zebrał.
+    Kolizje (FMAX w materiale, chwyt) przy narzędziu nie z +Z: `crashes_tilted` pyta stock
+    „ile by zabrał” (`oblique.would_take`) i tnie osobno tylko podejrzane ruchy. Verify
+    („za głęboko”) dla osi pod kątem liczy w układzie narzędzia (`stocklab/verify.gouges`).
+    Maszyna między zerami (`model/machine.py` + `tilted.arrive`): Bridgeport przed zmianą
+    przesunięcia jedzie na Z100 presetu; maszyna z obracaną głowicą (`anew`) zaczyna każdą
+    operację od Z100 nad jej zerem — drogi głowicy (M91) nie ma w programie, więc nie jest
+    rysowana ani liczona w czasie. `post/machines.able`: program maszyny wybranej przy
+    eksporcie, a gdy jest obrócone zero — pierwszej, która pochyla (lista w Play też jej).
+    Siatka detalu i stock startowy idą do symulacji w układzie zera DOMYŚLNEGO
+    (`op_zero.on_default`, `start_mesh`); Verify rysuje wynik przesunięty tam, gdzie widok
+    ma detal na aktywnym zerze. Uwaga do testów: promień stojący dokładnie na krawędzi
+    narzędzia bywa zbierany albo nie, zależnie od podziału ruchu (stary kod też) — w
+    testach rozdzielczość bez takich promieni (97).
   - Widok: `scene.apply` rysuje zaparkowaną operację na jej własnym zerze
     (`op_zero.drawn_at`); w drzewie dopisek „(other 0-Point)”, w Details `ParkedView`.
 - **Postprocesory osobno dla maszyn** (`post/machines.py`, wybór jako typ pliku w oknie
@@ -189,8 +226,8 @@ współrzędnych dla operacji. Dlatego:
     (M91), `CYCL DEF 7`, `M138 A B`, `PLANE SPATIAL … STAY COORD ROT`, `CYCL DEF 397`, `L Z100`,
     ruchy z M13 na pierwszym, `M9`; na końcu etykiety RESET, FREE, HEAD0. Wiercenie na razie
     cyklem 205 z `CYCL CALL POS` (jak Bridgeport), nie 200/203 z M99.
-  Do zrobienia: symulacja operacji z pochylonego zera, Play z listą programu wybranej
-  maszyny (teraz zawsze lista Bridgeporta), sprawdzenie na maszynie.
+  Do zrobienia: sprawdzenie na maszynie; czasy i dynamika Soraluce (teraz Bridgeporta, bez
+  drogi głowicy); wiercenie Soraluce 200/203 z M99; kopia `stocklab/oblique.py` do repo Lab.
 - Półfabrykat „z modelu” FreeCAD ustawia tylko przy tworzeniu, więc po każdej
   zmianie zera tłumacz przestawia go sam (`_place_stock`).
 - **Stock size...** (przycisk w Details stocka; `model/stock_size.py`, `engine/stock_size.py`,

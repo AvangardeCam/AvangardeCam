@@ -13,9 +13,9 @@ import numpy as np
 
 from avangardecam.engine import ProjectError
 from avangardecam.engine import freecad_cam as cam
-from avangardecam.engine import next_setup
+from avangardecam.engine import op_zero
 from avangardecam.model import playback as model_playback
-from avangardecam.post import heidenhain
+from avangardecam.post import heidenhain, machines
 
 
 # how far the part's triangles may be from its faces, to look at (Verify's are finer)
@@ -30,10 +30,12 @@ class Prepared(NamedTuple):
     vertices: np.ndarray  # of the part
     triangles: np.ndarray
     start: object = None  # the material in the stock box (model.start_stock.Mesh), None: all of it
+    machine: str = ""  # the machine whose program is played (post.machines: its label)
 
 
 def part_mesh(job, deflection=DEFLECTION_MM):
-    """The part of a setup as triangles in the setup's coordinates."""
+    """The part of a setup as triangles in the setup's coordinates (its
+    default zero point's)."""
     vertices, triangles = [], []
     for clone in job.Model.Group:
         shape = getattr(clone, "Shape", None)
@@ -43,13 +45,16 @@ def part_mesh(job, deflection=DEFLECTION_MM):
         offset = len(vertices)
         vertices += [(p.x, p.y, p.z) for p in points]
         triangles += [(a + offset, b + offset, c + offset) for a, b, c in faces]
-    return np.array(vertices, dtype=float).reshape(-1, 3), np.array(triangles, dtype=np.int64).reshape(-1, 3)
+    vertices = op_zero.on_default(job, np.array(vertices, dtype=float).reshape(-1, 3))
+    return vertices, np.array(triangles, dtype=np.int64).reshape(-1, 3)
 
 
-def prepare(job):
+def prepare(job, post=None):
     """Everything the player needs for the active operations of a setup;
     raises ProjectError (an operation the program cannot be written for,
-    no operation)."""
+    no operation). post: the machine's postprocessor (post.machines) whose
+    program is played, None: the default one; another one when it cannot
+    run the program (machines.able)."""
     doc = job.Document
     index = cam.setups(doc).index(job)
     try:
@@ -57,10 +62,13 @@ def prepare(job):
         setup = program.setups[index]
         if not setup.operations:
             raise ProjectError("{} has no active operations to play.".format(job.Label))
-        lines, lines_of = heidenhain.numbered(program)
-        timeline = model_playback.timeline(setup, index, lines, lines_of, retract_z=heidenhain.BRIDGEPORT_V1000.retract_z_mm)
+        machine = machines.able(post, program)
+        lines, lines_of = machine.numbered(program)
+        timeline = model_playback.timeline(
+            setup, index, lines, lines_of, retract_z=machine.retract_z_mm, change_z=machine.start_z_mm, anew=machine.anew
+        )
     except ValueError as e:  # a move the program cannot have, a cutting move without a feed
         raise ProjectError(str(e))
     tools = {t.number: t.tool for t in cam.project_tools(job)}
     vertices, triangles = part_mesh(job)
-    return Prepared(job.Label, timeline, tools, setup.stock, vertices, triangles, next_setup.start_mesh(job))
+    return Prepared(job.Label, timeline, tools, setup.stock, vertices, triangles, op_zero.start_mesh(job), machine.label)

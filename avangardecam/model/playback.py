@@ -18,7 +18,11 @@ tool where it is at any moment.
   or the line before when it has none of its own (a move that changes
   nothing in the program);
 - within a segment the tool moves evenly over its time (the speeding up
-  and slowing down only in how long it takes).
+  and slowing down only in how long it takes);
+- an operation on another zero point (model.tilted) keeps its segments
+  counted from that one (OperationSpan.zero, Timeline.zero_of); the
+  tool's tip, its axis and the path drawn are given in the preset's
+  coordinates (position, tool_axis, operation_polyline).
 
 Plain Python with numpy, no FreeCAD.
 """
@@ -29,7 +33,7 @@ from typing import NamedTuple, Optional
 
 import numpy as np
 
-from avangardecam.model import cycle_time, nc
+from avangardecam.model import cycle_time, nc, tilted
 from avangardecam.model.machine import RETRACT_Z_MM, TOOL_CHANGE_Z_MM, Machine, machine_segments
 from avangardecam.model.verify import CHAMFER_ANGLE_DEG, DEFAULT_LENGTH, DRILL_ANGLE_DEG
 
@@ -73,6 +77,7 @@ class OperationSpan(NamedTuple):
     start_s: float
     end_s: float
     notes: tuple  # the radius compensation's (model.machine)
+    zero: Optional[object] = None  # the zero point it counts from (nc.Operation.zero), None: the preset
 
     @property
     def duration_s(self):
@@ -83,7 +88,9 @@ class Timeline:
     """The steps of a setup over time; the tool's tip at any time."""
 
     def __init__(self, segments, starts, durations, steps, operations, lines):
-        self.segments = segments  # model.machine.Segment, the whole setup in order
+        # model.machine.Segment, the whole setup in order, each counted from
+        # its operation's zero point (zero_of)
+        self.segments = segments
         self.starts = np.asarray(starts, dtype=float)  # of each segment, s
         self.durations = np.asarray(durations, dtype=float)
         self.steps = steps
@@ -91,6 +98,12 @@ class Timeline:
         self.lines = lines  # the program's (all setups'), without line ends
         self.total_s = steps[-1].end_s if steps else 0.0
         self._step_starts = [s.start_s for s in steps]
+        # the zero point each segment is counted from (None: the preset)
+        self.zero_of = [None] * len(segments)
+        for step in steps:
+            zero = operations[step.operation].zero
+            if zero is not None:
+                self.zero_of[step.first : step.first + step.count] = [zero] * step.count
 
     def step_at(self, t):
         """The index of the step going on at time t: the last that started
@@ -125,11 +138,22 @@ class Timeline:
         return i, min(max((t - float(self.starts[i])) / duration, 0.0), 1.0)
 
     def position(self, t):
-        """Where the tool's tip is at time t, (x, y, z)."""
+        """Where the tool's tip is at time t, (x, y, z) in the preset's
+        coordinates."""
         i, share = self.segment_at(t)
         if i is None:
             return None
-        return point_on(self.segments[i], share)
+        return tilted.point(self.zero_of[i], point_on(self.segments[i], share))
+
+    def zero_at(self, t):
+        """The zero point the tool works on at time t (None: the preset)."""
+        i, _share = self.segment_at(t)
+        return None if i is None else self.zero_of[i]
+
+    def tool_axis(self, t):
+        """Which way the tool stands at time t (from its tip to its shank),
+        in the preset's coordinates."""
+        return tilted.direction(self.zero_at(t))
 
     def next_stop(self, t):
         """The end of the step going on at t, or of the next one when the
@@ -240,12 +264,13 @@ def _dwell_after(elements, op):
 
 
 def timeline(setup, setup_index=0, lines=(), lines_of=None, times=cycle_time.BRIDGEPORT_V1000,
-             retract_z=RETRACT_Z_MM, change_z=TOOL_CHANGE_Z_MM):  # fmt: skip
+             retract_z=RETRACT_Z_MM, change_z=TOOL_CHANGE_Z_MM, anew=False):  # fmt: skip
     """The Timeline of a setup (nc.Setup), the setup_index-th of its
     program; lines and lines_of from post.heidenhain.numbered of the
-    program (none: steps without lines)."""
+    program (none: steps without lines); anew: a machine that turns its
+    head (model.machine.Machine)."""
     lines_of = lines_of or {}
-    follower = Machine(retract_z, change_z, full=True)
+    follower = Machine(retract_z, change_z, full=True, anew=anew)
     segments, starts, durations, steps, operations = [], [], [], [], []
     now = 0.0
     line = None
@@ -292,20 +317,23 @@ def timeline(setup, setup_index=0, lines=(), lines_of=None, times=cycle_time.BRI
                 add(DWELL, op.tool, op.cycle.dwell_s, len(segments), 0, None, None)
         if change_pending:
             add(TOOL_CHANGE, op.tool, times.tool_change_s, len(segments), 0, None, ("call",))
-        operations.append(OperationSpan(op.label, op.tool, first_step, len(steps), start, now, tuple(notes)))
+        operations.append(OperationSpan(op.label, op.tool, first_step, len(steps), start, now, tuple(notes), op.zero))
         previous_tool = op.tool
     return Timeline(segments, starts, durations, steps, operations, list(lines))
 
 
 def operation_polyline(line, operation):
-    """The Polyline of an operation (OperationSpan) of a Timeline and the
-    index of its first segment."""
+    """The Polyline of an operation (OperationSpan) of a Timeline, in the
+    preset's coordinates, and the index of its first segment."""
     steps = line.steps[operation.first : operation.end]
     if not steps:
         return polyline([]), 0
     first = steps[0].first
     last = steps[-1].first + steps[-1].count
-    return polyline(line.segments[first:last]), first
+    drawn = polyline(line.segments[first:last])
+    if operation.zero is not None:
+        drawn = drawn._replace(points=tilted.points(operation.zero, drawn.points))
+    return drawn, first
 
 
 # -- the tool's shape --------------------------------------------------------------

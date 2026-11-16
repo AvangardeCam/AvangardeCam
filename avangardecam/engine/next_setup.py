@@ -33,7 +33,6 @@ from avangardecam.engine import ProjectError
 from avangardecam.engine import freecad_cam as cam
 from avangardecam.model import start_stock
 from avangardecam.model import verify as model_verify
-from avangardecam.post import heidenhain
 
 STANDARD = "standard"
 FROM_SETUP = "setup"
@@ -173,20 +172,27 @@ class Prepared(NamedTuple):
     to_part: np.ndarray  # 4x4: its coordinates to the part's
 
 
-def prepare_left(job):
+def prepare_left(job, post=None):
     """What left needs of a setup (read from FreeCAD): its active operations
-    as the stock model cuts them, its stock."""
+    as the stock model cuts them, its stock; all in the setup's default
+    zero point's coordinates (engine.op_zero). post: the machine's
+    postprocessor (post.machines), None: the default one."""
+    from avangardecam.engine import op_zero
+    from avangardecam.post import machines
+
     doc = job.Document
     index = cam.setups(doc).index(job)
-    setup = cam.nc_program(doc, "STOCK").setups[index]
+    program = cam.nc_program(doc, "STOCK")
+    setup = program.setups[index]
+    machine = machines.able(post, program)
     if setup.stock is None:
         raise ProjectError("{} has no stock.".format(job.Label))
     tools = {t.number: t.tool for t in cam.project_tools(job)}
     try:
-        planned = model_verify.plan(setup, tools, heidenhain.BRIDGEPORT_V1000.retract_z_mm)
+        planned = model_verify.plan(setup, tools, machine.retract_z_mm, machine.start_z_mm, machine.anew)
     except ValueError as e:
         raise ProjectError(str(e))
-    return Prepared(job.Label, setup.stock, start_mesh(job), planned, _matrix(cam.zero(job)))
+    return Prepared(job.Label, setup.stock, op_zero.start_mesh(job), planned, _matrix(op_zero.default_zero(job)))
 
 
 def left(prepared, resolution, progress=None):

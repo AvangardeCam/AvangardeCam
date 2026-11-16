@@ -15,7 +15,7 @@ from PySide import QtCore, QtWidgets
 
 from avangardecam import tr
 from avangardecam.engine import freecad_cam as cam
-from avangardecam.engine import stock_size
+from avangardecam.engine import op_zero
 from avangardecam.model import stock as model_stock
 from avangardecam.model import stock_size as model_stock_size
 from avangardecam.ui import details, field_pictures, manual, window_fit
@@ -31,11 +31,14 @@ class StockDialog(QtWidgets.QDialog):
         self.setObjectName("AvangardeCamStockDialog")
         self.setWindowTitle(tr("Stock"))
         self.job = job
-        self.model = stock_size.models_bounds(job)
-        current = cam.stock(job)
+        # on the active zero point's axes, or on the stock's own (engine.op_zero)
+        edit = op_zero.stock_edit(job)
+        self.model = edit.model
+        self.own = edit.own
+        self.current = current = edit.box
         self.fixed = current is None
         if current is None:
-            current = _around(self.model, cam.stock_bounds(job))
+            current = _around(self.model, edit.bounds)
 
         box = QtWidgets.QVBoxLayout(self)
         top = QtWidgets.QHBoxLayout()
@@ -77,6 +80,11 @@ class StockDialog(QtWidgets.QDialog):
             fixed = QtWidgets.QLabel(tr("This stock was made in FreeCAD with a fixed size; OK replaces it by a box around the model."))  # fmt: skip
             fixed.setWordWrap(True)
             box.addWidget(fixed)
+        if self.own:
+            own = QtWidgets.QLabel(OWN_ZERO_NOTE())
+            own.setObjectName("AvangardeCamStockOwnZero")
+            own.setWordWrap(True)
+            box.addWidget(own)
         self.message = QtWidgets.QLabel()
         self.message.setObjectName("AvangardeCamStockMessage")
         self.message.setWordWrap(True)
@@ -151,17 +159,22 @@ class StockDialog(QtWidgets.QDialog):
         except ValueError as exc:
             self.message.setText(str(exc))
             return
-        if self.fixed or wanted != cam.stock(self.job):
+        if self.fixed or wanted != self.current:
             doc = self.job.Document
             doc.openTransaction(tr("Stock"))
             try:
-                cam.set_stock(self.job, wanted)
+                op_zero.set_stock(self.job, wanted)
             except (ValueError, cam.ProjectError) as exc:
                 doc.abortTransaction()
                 self.message.setText(str(exc))
                 return
             doc.commitTransaction()
         super().accept()
+
+
+def OWN_ZERO_NOTE():
+    """Said where the stock is typed along its own zero point's axes."""
+    return tr("The zero point is turned at an odd angle to the stock's own zero point: the sizes and allowances here are along the axes of the stock's own zero point (the default one it was made on).")  # fmt: skip
 
 
 def _value(box):

@@ -25,11 +25,12 @@ from PySide import QtCore, QtGui, QtWidgets
 
 from avangardecam import params, tr
 from avangardecam.engine import freecad_cam as cam
+from avangardecam.engine import op_zero
 from avangardecam.engine import verify as engine_verify
 from avangardecam.model import crashes
 from avangardecam.model import verify as model_verify
 from avangardecam.model.verify import stock_verify
-from avangardecam.ui import scene
+from avangardecam.ui import postprocessors, scene
 
 # cells on the longest edge of the stock (user, 2026-10-27: a choice, Medium at first)
 RESOLUTIONS = ((QtCore.QT_TRANSLATE_NOOP("AvangardeCam", "Rough"), 150),
@@ -83,11 +84,18 @@ def _views(doc):
     return gui_doc.mdiViewsOfType("Gui::View3DInventor") if gui_doc is not None else []
 
 
-def _node(result):
+def _node(result, place=None):
+    """The stock left; place: where the view has its coordinates (the
+    setup's default zero point seen from the active one), None: as they are."""
     from pivy import coin
 
     node = coin.SoSeparator()
     node.setName(_NODE_NAME)
+    if place is not None:
+        move = coin.SoTransform()
+        move.translation.setValue(place.Base.x, place.Base.y, place.Base.z)
+        move.rotation.setValue(*place.Rotation.Q)
+        node.addChild(move)
     hints = coin.SoShapeHints()
     hints.vertexOrdering = coin.SoShapeHints.COUNTERCLOCKWISE
     hints.shapeType = coin.SoShapeHints.SOLID
@@ -129,7 +137,7 @@ def show(job, result):
     """The stock left in every 3D view instead of the part, its stock and paths."""
     doc = job.Document
     _remove(doc)
-    node = _node(result)
+    node = _node(result, op_zero.from_default_placement(job))
     for view in _views(doc):
         root = view.getSceneGraph()
         names = [root.getChild(i).getName() for i in range(root.getNumChildren())]
@@ -248,7 +256,7 @@ class VerifyWindow(QtWidgets.QDialog):
             return
         try:
             self.doc.recompute()
-            prepared = engine_verify.prepare(self.job)
+            prepared = engine_verify.prepare(self.job, postprocessors.last())
         except Exception as exc:  # ProjectError and what FreeCAD raises, shown in the window
             state.update(done=True, error=exc)
             self._poll()

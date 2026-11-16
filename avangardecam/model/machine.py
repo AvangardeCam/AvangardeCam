@@ -21,6 +21,11 @@ out of the stock (model.verify), the cycle time adds them up
   where it was), after an operation at the retract height, after a
   drilling at the 2nd set-up clearance; the next operation moves in XY at
   that height, then down.
+- an operation on another zero point (nc.Operation.zero) has its moves
+  counted from that one, the tool along its Z (model.tilted): the tool
+  goes high on the preset before the zero point is shifted under it; a
+  machine that turns its head (Machine(anew=True)) starts every operation
+  high over the operation's own zero point, as post.soraluce writes it.
 
 Each move keeps its feed (mm/min; None on a rapid move, and on a feed move
 that keeps the feed before it, as the program writes it), and where in the
@@ -40,7 +45,7 @@ from typing import NamedTuple, Optional, Tuple
 
 import numpy as np
 
-from avangardecam.model import nc
+from avangardecam.model import nc, tilted
 
 RETRACT_Z_MM = 40.0  # after an operation (post.heidenhain: the machine's retract_z_mm)
 TOOL_CHANGE_Z_MM = 100.0  # after a tool change (post.heidenhain: L Z100 R0 FMAX)
@@ -82,22 +87,34 @@ class Machine:
     drilling cycle's pecks too, and the way up to the tool change height
     (they take no material, the cycle time needs them)."""
 
-    def __init__(self, retract_z=RETRACT_Z_MM, change_z=TOOL_CHANGE_Z_MM, full=False):
+    def __init__(self, retract_z=RETRACT_Z_MM, change_z=TOOL_CHANGE_Z_MM, full=False, anew=False):
         self.retract_z = retract_z
         self.change_z = change_z
         self.full = full
+        self.anew = anew  # a turning head: every operation starts high over its own zero point
         self.position = [None, None, change_z]
+        self.zero = None  # the zero point the position is counted from (None: the preset)
         self.tool = None
         self.changed = False  # the last operation called its tool
 
     def elements(self, op):
         result = []
         self.changed = self.tool is None or self.tool != op.tool.number
+        # the zero point the operation counts from (model.tilted): the tool
+        # as it sees it, and how high the tool change height is there
+        moved = op.zero != self.zero
+        self.position, high = tilted.arrive(self, op)
+        self.zero = op.zero
         if self.changed:
             self.tool = op.tool.number
-            if self.full and self.position[0] is not None and self.position[2] != self.change_z:
-                self._add(result, nc.Move(nc.RAPID, None, None, self.change_z), ("change",))
-            self.position = [self.position[0], self.position[1], self.change_z]
+            if self.full and self.position[0] is not None and self.position[2] != high:
+                self._add(result, nc.Move(nc.RAPID, None, None, high), ("change",))
+            self.position = [self.position[0], self.position[1], high]
+        elif moved and self.position[2] != high:
+            # high on the preset before the zero point changes under the tool
+            if self.full and self.position[0] is not None:
+                self._add(result, nc.Move(nc.RAPID, None, None, high))
+            self.position[2] = high
         if op.kind == nc.DRILLING:
             return result + self._drilling(op)
         moves = list(op.moves)

@@ -9,6 +9,7 @@ skipped without FreeCAD.
 """
 
 import datetime
+import math
 import unittest
 
 from avangardecam.model import frame, nc, op_zero, operations
@@ -107,59 +108,6 @@ class TestModel(unittest.TestCase):
         self.assertEqual(seen.origin, (5.0, 0.0, 0.0))
         self.assertTrue(op_zero.is_shift(seen))
 
-    def operation(self, zero):
-        moves = (
-            nc.Move(nc.RAPID, 10.0, 0.0, None),
-            nc.Move(nc.RAPID, None, None, 5.0),
-            nc.Move(nc.LINE, None, None, -1.0, 300.0),
-            nc.Move(nc.LINE, 20.0, None, None, 900.0, compensation=nc.LEFT),
-            nc.Move(nc.ARC, 30.0, 10.0, None, 900.0, (30.0, 0.0), False, nc.LEFT),
-        )
-        return nc.Operation(nc.CONTOUR, "Contour", TOOL, moves, zero=zero)
-
-    def test_on_preset_shifted(self):
-        zero = frame.Frame((100.0, -50.0, -2.0), *axes(frame.Frame((0, 0, 0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0))))
-        op = op_zero.on_preset(self.operation(zero))
-        self.assertIsNone(op.zero)
-        self.assertEqual(op.moves[0][:4], (nc.RAPID, 110.0, -50.0, None))
-        self.assertEqual(op.moves[1][:4], (nc.RAPID, None, None, 3.0))
-        self.assertEqual(op.moves[3][:4], (nc.LINE, 120.0, None, None))
-        self.assertEqual(op.moves[3].compensation, nc.LEFT)
-        self.assertEqual(op.moves[4].center, (130.0, -50.0))
-        self.assertEqual((op.moves[4].x, op.moves[4].y, op.moves[4].clockwise), (130.0, -40.0, False))
-        plain = self.operation(None)
-        self.assertIs(op_zero.on_preset(plain), plain)
-
-    def test_on_preset_turned_about_z(self):
-        zero = frame.Frame((100.0, 0.0, 0.0), (0.0, 1.0, 0.0), (-1.0, 0.0, 0.0), (0.0, 0.0, 1.0))
-        op = op_zero.on_preset(self.operation(zero))
-        self.assertEqual(op.moves[0][:4], (nc.RAPID, 100.0, 10.0, None))
-        self.assertEqual(op.moves[1][:4], (nc.RAPID, None, None, 5.0))
-        self.assertEqual(op.moves[3][:4], (nc.LINE, 100.0, 20.0, None), "a move along X is one along Y")
-        self.assertEqual((op.moves[4].x, op.moves[4].y, op.moves[4].center), (90.0, 30.0, (100.0, 30.0)))
-        self.assertFalse(op.moves[4].clockwise, "seen from the same side")
-
-    def test_on_preset_drilling(self):
-        cycle = nc.DrillCycle(2.0, 100.0, 2.0, 10.0, 0.0, 0.0, 0.2, 0.2, 0.0, 0.2, 0.0, 0.0, 3000.0, (nc.DrillHole(5.0, 6.0, 0.0, -10.0),))
-        zero = frame.Frame((1.0, 2.0, 3.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0))
-        op = op_zero.on_preset(nc.Operation(nc.DRILLING, "Drilling", TOOL, (), cycle, zero))
-        self.assertEqual(op.cycle.holes, (nc.DrillHole(6.0, 8.0, 3.0, -10.0),))
-
-    def test_tilted_operations_are_left_out(self):
-        tilted = frame.Frame((20.0, 0.0, -6.0), (0.0, 0.0, -1.0), (0.0, 1.0, 0.0), (1.0, 0.0, 0.0))
-        with self.assertRaises(ValueError):
-            op_zero.on_preset(self.operation(tilted))
-        setup = nc.Setup(1, "Setup 1", None, (self.operation(None), replace_label(self.operation(tilted), "Side")))
-        flat, left_out = op_zero.setup_on_preset(setup)
-        self.assertEqual([op.label for op in flat.operations], ["Contour"])
-        self.assertEqual(left_out, ("Side",))
-
-
-def replace_label(op, label):
-    from dataclasses import replace
-
-    return replace(op, label=label)
-
 
 @unittest.skipIf(FreeCAD is None, "needs FreeCAD (run through avangardecam/tests/run.py)")
 class TestEngine(unittest.TestCase):
@@ -216,8 +164,8 @@ class TestEngine(unittest.TestCase):
     def stock(self):
         return tuple(self.cam.stock_bounds(self.job))
 
-    def program(self, zeros=True):
-        return self.cam.nc_program(self.doc, "ZEROS", zeros=zeros).setups[0]
+    def program(self):
+        return self.cam.nc_program(self.doc, "ZEROS").setups[0]
 
     def test_a_setup_on_one_zero_point_is_as_it_was(self):
         op = self.contour()
@@ -226,7 +174,6 @@ class TestEngine(unittest.TestCase):
         self.assertIsNone(self.engine.operation_zero(op))
         setup = self.program()
         self.assertIsNone(setup.operations[0].zero)
-        self.assertEqual(self.program(zeros=False), setup)
         # Rotate 0-Point turns the setup: the operation follows, as always
         self.cam.rotate_zero(self.job, 90.0)
         self.assertFalse(self.engine.parked(op))
@@ -264,12 +211,6 @@ class TestEngine(unittest.TestCase):
         self.assertEqual(self.cutting(two.moves), on_corner)
         self.assertPoint(self.cam.zero(self.job).Base, (20, 10, 10), "the program leaves the zero point where it was")
         self.assertTrue(self.engine.parked(first) and not self.engine.parked(second))
-
-        # for the simulation both are on the preset: the same cut twice
-        flat = self.program(zeros=False)
-        self.assertEqual(len(flat.operations), 2)
-        self.assertIsNone(flat.operations[1].zero)
-        self.assertPoint(self.cutting(flat.operations[1].moves), before[:4] + (-1.0,))
 
     def test_reset_and_the_zero_point_of_an_operation(self):
         first = self.contour()
@@ -333,8 +274,6 @@ class TestEngine(unittest.TestCase):
         self.assertEqual((two.zero.x_axis, two.zero.z_axis), ((0.0, 0.0, -1.0), (1.0, 0.0, 0.0)))
         self.assertEqual(self.cutting(two.moves), cut)
         self.assertTrue(self.engine.parked(top) and not self.engine.parked(side))
-        # the simulation runs a setup on its preset: it leaves the tilted one out
-        self.assertEqual([op.label for op in self.program(zeros=False).operations], [top.Label])
 
     def test_stock_at_an_odd_angle_is_the_box_around_the_block(self):
         self.move_zero.move(self.job, (0.0, 0.0, 0.0), (0.0, 0.0, 45.0))
@@ -342,6 +281,157 @@ class TestEngine(unittest.TestCase):
         self.assertPoint(self.stock(), (-half, -half, -12, half, half, 1))
         self.engine.reset(self.job)
         self.assertPoint(self.stock(), (-21, -11, -12, 21, 11, 1), "back: the block itself")
+
+    # -- the stock's own zero point ----------------------------------------------------
+
+    def test_stock_typed_on_a_quarter_turned_zero_point(self):
+        """Typed where the zero point is, it is the block on the default one."""
+        from avangardecam.model.stock import BoxStock
+
+        self.contour()
+        # onto the right wall: its X is the default one's -Z, its Z the default one's +X
+        self.move_zero.move(self.job, (20.0, 0.0, -6.0), (0.0, 90.0, 0.0))
+        edit = self.engine.stock_edit(self.job)
+        self.assertFalse(edit.own, "a box on these axes too: typed on them")
+        self.assertEqual(edit.box, BoxStock(1.0, 0.0, 1.0, 1.0, 1.0, 1.0), "the block as the wall sees it")
+        self.assertPoint(tuple(edit.model), (-6, -10, -40, 6, 10, 0))
+        typed = BoxStock(3.0, 0.5, 1.0, 2.0, 1.0, 4.0)
+        self.engine.set_stock(self.job, typed)
+        self.assertEqual(self.cam.stock(self.job), typed)
+        self.assertPoint(self.stock(), (-9, -11, -41, 6.5, 12, 4))
+        self.assertTrue(self.engine.same(self.engine.stock_zero(self.job), self.engine.default_zero(self.job)))
+        self.assertPoint(tuple(self.program().stock), (-21, -11, -12.5, 24, 12, 3), "BLK FORM on the preset")
+        self.engine.reset(self.job)
+        self.assertEqual(self.cam.stock(self.job), BoxStock(1.0, 4.0, 1.0, 2.0, 0.5, 3.0), "the same block on the default one")
+        self.assertPoint(self.stock(), (-21, -11, -12.5, 24, 12, 3))
+        # and back on the wall as it was typed
+        self.move_zero.move(self.job, (20.0, 0.0, -6.0), (0.0, 90.0, 0.0))
+        self.assertEqual(self.cam.stock(self.job), typed)
+
+    def test_stock_at_an_odd_angle_is_typed_on_its_own_zero_point(self):
+        from avangardecam.engine import stock_size
+        from avangardecam.model.stock import BoxStock
+
+        self.assertFalse(self.engine.stock_edit(self.job).own)
+        self.assertIsNone(self.engine.block_seen(self.job))
+        self.move_zero.move(self.job, (0.0, 0.0, 0.0), (0.0, 0.0, 30.0))
+        edit = self.engine.stock_edit(self.job)
+        self.assertTrue(edit.own, "no box on these axes: along the stock's own")
+        self.assertEqual(edit.box, BoxStock())
+        self.assertPoint(tuple(edit.model), (-20, -10, -12, 20, 10, 0))
+        self.assertPoint(tuple(edit.bounds), (-21, -11, -12, 21, 11, 1))
+        bounds, place = self.engine.block_seen(self.job)
+        self.assertPoint(tuple(bounds), (-21, -11, -12, 21, 11, 1))
+        self.assertAlmostEqual(place.Rotation.Angle * place.Rotation.Axis.z, -math.radians(30.0), places=9, msg="as it lies from here")
+        typed = BoxStock(2.0, 2.0, 3.0, 3.0, 0.0, 5.0)
+        self.engine.set_stock(self.job, typed)
+        self.assertEqual(self.engine.stock_edit(self.job).box, typed)
+        cos, sin = math.cos(math.radians(30.0)), math.sin(math.radians(30.0))
+        reach_x, reach_y = 22 * cos + 13 * sin, 22 * sin + 13 * cos
+        self.assertPoint(self.stock(), (-reach_x, -reach_y, -12, reach_x, reach_y, 5), "FreeCAD's stock: the box around it")
+        self.assertPoint(tuple(self.program().stock), (-22, -13, -12, 22, 13, 5))
+        # Stock size: the model in the middle, along the stock's own axes
+        stock_size.set_size(self.job, 50.0, 30.0, 20.0)
+        self.assertEqual(self.engine.stock_edit(self.job).box, BoxStock(5.0, 5.0, 5.0, 5.0, 4.0, 4.0))
+        self.engine.reset(self.job)
+        self.assertEqual(self.cam.stock(self.job), BoxStock(5.0, 5.0, 5.0, 5.0, 4.0, 4.0))
+        self.assertFalse(self.engine.stock_edit(self.job).own)
+        self.assertIsNone(self.engine.block_seen(self.job))
+
+    def test_the_block_stays_when_another_zero_point_is_the_default(self):
+        from avangardecam.engine import verify as engine_verify
+        from avangardecam.model.stock import BoxStock
+
+        self.cam.set_stock(self.job, BoxStock(1.0, 2.0, 3.0, 4.0, 0.0, 1.0))
+        old = self.engine.default_zero(self.job)
+        # a quarter turn: the same block on the new default zero point's axes
+        self.move_zero.move(self.job, (0.0, 0.0, 0.0), (0.0, 0.0, 90.0))
+        self.assertTrue(self.engine.set_default(self.job))
+        self.assertTrue(self.engine.same(self.engine.stock_zero(self.job), self.cam.zero(self.job)))
+        self.assertEqual(self.cam.stock(self.job), BoxStock(3.0, 4.0, 2.0, 1.0, 0.0, 1.0))
+        self.assertIsNone(self.engine.start_mesh(self.job))
+        # at an odd angle the block keeps its own zero point: no box on the new default one
+        quarter = self.cam.zero(self.job)
+        self.move_zero.move(self.job, (0.0, 0.0, 0.0), (0.0, 0.0, 30.0))
+        self.assertTrue(self.engine.set_default(self.job))
+        self.assertTrue(self.engine.at_default(self.job))
+        self.assertTrue(self.engine.same(self.engine.stock_zero(self.job), quarter))
+        self.assertFalse(self.engine.same(quarter, old))
+        edit = self.engine.stock_edit(self.job)
+        self.assertTrue(edit.own)
+        self.assertEqual(edit.box, BoxStock(3.0, 4.0, 2.0, 1.0, 0.0, 1.0))
+        # the program's stock is the box around it, what is cut the block itself
+        box = self.program().stock
+        self.assertGreater(box.x_max - box.x_min, 20.0 + 7.0 + 1.0)
+        mesh = self.engine.start_mesh(self.job)
+        self.assertEqual((len(mesh.vertices), len(mesh.triangles)), (8, 12))
+        self.assertPoint(tuple(mesh.vertices.min(axis=0)) + tuple(mesh.vertices.max(axis=0)), tuple(box))
+        self.contour()
+        prepared = engine_verify.prepare(self.job)
+        self.assertIsNotNone(prepared.start)
+        result = engine_verify.run(prepared, 60)
+        corner = ((result.vertices[:, 0] - box.x_max) ** 2 + (result.vertices[:, 1] - box.y_max) ** 2) ** 0.5
+        self.assertGreater(float(corner.min()), 3.0, "the corners of the box around the block are air")
+
+    # -- what runs the program ------------------------------------------------------------
+
+    def test_verify_and_play_run_every_zero_point(self):
+        import numpy as np
+
+        from avangardecam.engine import cycle_time as engine_time
+        from avangardecam.engine import next_setup
+        from avangardecam.engine import playback as engine_playback
+        from avangardecam.engine import verify as engine_verify
+        from avangardecam.post import machines
+
+        top = self.contour()
+        self.move_zero.move(self.job, (20.0, 0.0, -6.0), (0.0, 90.0, 0.0))
+        side = self.contour((1, 0, 0), -2.0)
+        self.assertFalse(self.engine.at_default(self.job))
+        # Verify: all as the default zero point sees it, whichever is the active one
+        prepared = engine_verify.prepare(self.job)
+        self.assertEqual([p.label for p in prepared.planned], [top.Label, side.Label])
+        self.assertEqual([p.operation.axis for p in prepared.planned], ["+Z", (1.0, 0.0, 0.0)])
+        self.assertPoint(tuple(prepared.stock), (-21, -11, -12, 21, 11, 1))
+        low, high = prepared.vertices.min(axis=0), prepared.vertices.max(axis=0)
+        self.assertPoint(tuple(low) + tuple(high), (-20, -10, -12, 20, 10, 0), "the part too")
+        result = engine_verify.run(prepared, 80)
+        self.assertEqual(result.collisions, ())
+        # the tool's centre on the outlines: 1 mm into the part's top, 2 mm into its wall
+        on_top, on_wall = result.gouges
+        self.assertEqual((on_top.operation, on_wall.operation), (top.Label, side.Label))
+        self.assertAlmostEqual(on_top.depth_mm, 1.0, places=3)
+        self.assertAlmostEqual(on_wall.depth_mm, 2.0, places=3)
+        self.assertAlmostEqual(on_wall.point[0], 20.0, places=3, msg="on the wall, in the default zero point's coordinates")
+        # the allowance on the wall is gone where the tool (Ø8, round the wall's outline) went
+        on_allowance = result.vertices[result.vertices[:, 0] > 20.5]
+        self.assertTrue(len(on_allowance))
+        self.assertLess(float(np.abs(on_allowance[:, 1]).max()), 6.5)
+        self.assertPoint(self.cam.zero(self.job).Base, (20, 0, 6), "the zero point stays where the user has it")
+        self.engine.reset(self.job)
+        again = engine_verify.prepare(self.job)
+        np.testing.assert_allclose(again.vertices.min(axis=0), low, atol=1e-6)
+        self.assertEqual([p.operation.axis for p in again.planned], ["+Z", (1.0, 0.0, 0.0)])
+        self.engine.activate_operation(side)
+
+        # Play: the program of a machine that tilts, whichever was chosen
+        played = engine_playback.prepare(self.job, machines.BRIDGEPORT_V1000)
+        self.assertEqual(played.machine, machines.SORALUCE_T35.label)
+        line = played.timeline
+        self.assertEqual(line.tool_axis(line.total_s), (1.0, 0.0, 0.0))
+        self.assertEqual(line.operations[1].zero.origin, (20.0, 0.0, -6.0))
+        self.assertTrue(any("PLANE SPATIAL SPA0. SPB90. SPC0." in text for text in line.lines))
+        self.assertPoint(tuple(played.vertices.min(axis=0)) + tuple(played.vertices.max(axis=0)), (-20, -10, -12, 20, 10, 0))
+
+        # the cycle time and the stock the setup leaves
+        (times,) = engine_time.program_times(self.doc)
+        self.assertEqual([op.label for op in times.operations], [top.Label, side.Label])
+        self.assertGreater(times.operations[1].feed_s, 1.0)
+        left = next_setup.prepare_left(self.job)
+        self.assertPoint(tuple(left.to_part[:3, 3]), (0, 0, 12), "from the default zero point to the part")
+        mesh = next_setup.left(left, 60)
+        self.assertLess(float(np.abs(mesh.vertices[mesh.vertices[:, 0] > 20.5][:, 1]).max()), 6.5)
+        self.assertGreater(float(mesh.vertices[:, 2].min()), -1e-6, "in the part's coordinates: the block stands on Z0")
 
     def test_the_setup_moves_from_its_default_zero_point_only(self):
         from avangardecam.engine import ProjectError

@@ -421,6 +421,7 @@ def apply(doc):
         return
     from avangardecam.engine import op_zero
     from avangardecam.ui import next_setup
+    from avangardecam.ui import op_zero as ui_op_zero
 
     jobs = cam.setups(doc)
     active = active_setup(doc)
@@ -443,6 +444,7 @@ def apply(doc):
                 _show(helper, False)
         _show(job.Stock, on)
         next_setup.show_stock(job, on)  # a stock left by another setup: its own shape, not its box
+        ui_op_zero.show_block(job, on)  # a block at an odd angle to the zero point: as it lies, not the box around it
         for op in job.Operations.Group:
             _show(op, on and not hidden(op))
         for obj in _drawn(job):

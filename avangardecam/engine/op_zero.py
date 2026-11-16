@@ -20,9 +20,15 @@ moved away: it works as it always did.
   stays the same block.
 - The default zero point is the machine's preset (AvangardeDefaultZero);
   set_default() and reset() are CAM > Set 0-Point as default and Reset
-  0-Point. The block of stock is kept as the default zero point sees it;
-  on another zero point the stock is the box around that block (the same
-  block on axes a quarter turn away, a larger box at other angles).
+  0-Point.
+- The stock has a zero point of its own (AvangardeStockZero): the one
+  its block is a box on, the default one it was made on. The block is
+  kept as that zero point sees it (AvangardeBlock); on another zero point
+  FreeCAD's stock is the box around the block (the same block on axes a
+  quarter turn away, a larger box at other angles). A stock typed on
+  another zero point is the block on the default one, counted from where
+  it was typed (stock_changed); at an odd angle its sizes are typed along
+  the stock's own axes (stock_edit, set_stock).
 - setup_program() is the setup for the NC program: it visits each zero
   point in turn, reads its operations there and comes back, so that
   every operation is read where it is computed.
@@ -32,6 +38,7 @@ import contextlib
 import itertools
 import json
 from dataclasses import replace
+from typing import NamedTuple
 
 import FreeCAD
 
@@ -43,8 +50,9 @@ from avangardecam.model import stock as model_stock
 _ZERO = "AvangardeZero"
 _PARKED = "AvangardeParked"
 _DEFAULT = "AvangardeDefaultZero"
-_BLOCK = "AvangardeBlock"  # the stock's bounds on the default zero point
+_BLOCK = "AvangardeBlock"  # the stock's bounds on its own zero point
 _BOX = "AvangardeDefaultStock"  # its allowances there
+_STOCK_ZERO = "AvangardeStockZero"  # the zero point the block is a box on
 _GROUP = "AvangardeCam"
 
 _TOLERANCE = 1e-6
@@ -183,59 +191,174 @@ def _json(job, name):
         return None
 
 
+def stock_zero(job):
+    """The stock's own zero point: the one its block is a box on. The
+    default zero point, unless another one was set as default at an odd
+    angle to it (the block stays the block it is)."""
+    if hasattr(job, _STOCK_ZERO) and _json(job, _BLOCK):
+        return getattr(job, _STOCK_ZERO)
+    return default_zero(job)
+
+
+def _along(place, other):
+    """Whether the axes of a zero point go along another one's (quarter
+    turns apart at most): a box on one is a box on the other."""
+    return model.along_axes(model.relative(geometry.frame_of(other), geometry.frame_of(place)))
+
+
+def _moved(bounds, place):
+    """The box around bounds (x_min, ..., z_max) moved by place."""
+    corners = [
+        place.multVec(FreeCAD.Vector(x, y, z))
+        for x, y, z in itertools.product((bounds[0], bounds[3]), (bounds[1], bounds[4]), (bounds[2], bounds[5]))
+    ]
+    low = [min(getattr(c, axis) for c in corners) for axis in "xyz"]
+    high = [max(getattr(c, axis) for c in corners) for axis in "xyz"]
+    return model_stock.Bounds(*low, *high)
+
+
+def _model_bounds(job, place):
+    """The box of the setup's models as the zero point place sees them."""
+    import Path.Main.Stock as PathStock
+
+    if same(place, cam.zero(job)):
+        box = PathStock.shapeBoundBox(job.Model.Group)
+    else:
+        box = FreeCAD.BoundBox()
+        inverse = place.inverse()
+        for clone in job.Model.Group:
+            original = cam._original(clone)
+            shape = original.Shape.copy()
+            shape.Placement = inverse.multiply(original.Placement)
+            box.add(shape.BoundBox)
+    return model_stock.Bounds(box.XMin, box.YMin, box.ZMin, box.XMax, box.YMax, box.ZMax)
+
+
+def _allowances(block, model_box):
+    """How far a block reaches past the models' box on each side."""
+    values = [
+        model_box.x_min - block[0], block[3] - model_box.x_max,
+        model_box.y_min - block[1], block[4] - model_box.y_max,
+        model_box.z_min - block[2], block[5] - model_box.z_max,
+    ]  # fmt: skip
+    return [max(0.0, round(value, 6)) for value in values]
+
+
+def _keep_block(job, zero, block, allowances):
+    _property(job, "App::PropertyString", _BLOCK, "Stock bounds on the stock's own zero point")
+    _property(job, "App::PropertyString", _BOX, "Stock allowances on the stock's own zero point")
+    _property(job, "App::PropertyPlacement", _STOCK_ZERO, "Zero point of the stock: its block is a box on it")
+    setattr(job, _STOCK_ZERO, zero)
+    setattr(job, _BLOCK, json.dumps([float(c) for c in block]) if block is not None else "")
+    setattr(job, _BOX, json.dumps([float(c) for c in allowances]) if allowances is not None else "")
+
+
 def _remember_block(job):
-    """The stock as the default zero point (the active one) has it."""
-    _property(job, "App::PropertyString", _BLOCK, "Stock bounds on the default zero point")
-    _property(job, "App::PropertyString", _BOX, "Stock allowances on the default zero point")
+    """The stock as the active zero point has it is the setup's block: a
+    box on this zero point, its own from now on."""
     box = cam.stock(job)
     if box is None:  # another kind of stock: it is not a box around the model
-        setattr(job, _BLOCK, "")
-        setattr(job, _BOX, "")
+        _keep_block(job, cam.zero(job), None, None)
         return
-    setattr(job, _BLOCK, json.dumps(list(cam.stock_bounds(job))))
-    setattr(job, _BOX, json.dumps([box.x_neg_mm, box.x_pos_mm, box.y_neg_mm, box.y_pos_mm, box.z_neg_mm, box.z_pos_mm]))
+    _keep_block(
+        job, cam.zero(job), cam.stock_bounds(job),
+        [box.x_neg_mm, box.x_pos_mm, box.y_neg_mm, box.y_pos_mm, box.z_neg_mm, box.z_pos_mm],
+    )  # fmt: skip
 
 
 def _fit_stock(job, place):
-    """The allowances of the stock on the zero point place (the clones are
-    there already): the block's own on the default zero point, else the
-    box around the block."""
-    import Path.Main.Stock as PathStock
-
+    """The allowances of FreeCAD's stock on the zero point place (the
+    clones are there already): the block's own on its own zero point,
+    else the box around the block."""
     block, box = _json(job, _BLOCK), _json(job, _BOX)
     if cam.stock(job) is None or not block or not box or not job.Model.Group:
         return
-    default = default_zero(job)
-    if same(place, default):
+    own = stock_zero(job)
+    if same(place, own):
         allowances = box
     else:
-        seen = place.inverse().multiply(default)
-        corners = [
-            seen.multVec(FreeCAD.Vector(x, y, z))
-            for x, y, z in itertools.product((block[0], block[3]), (block[1], block[4]), (block[2], block[5]))
-        ]
-        part = PathStock.shapeBoundBox(job.Model.Group)
-        low = [min(getattr(c, axis) for c in corners) for axis in "xyz"]
-        high = [max(getattr(c, axis) for c in corners) for axis in "xyz"]
-        allowances = [
-            part.XMin - low[0], high[0] - part.XMax,
-            part.YMin - low[1], high[1] - part.YMax,
-            part.ZMin - low[2], high[2] - part.ZMax,
-        ]  # fmt: skip
+        allowances = _allowances(_moved(block, place.inverse().multiply(own)), _model_bounds(job, place))
     stock = job.Stock
     for name, value in zip(("ExtXneg", "ExtXpos", "ExtYneg", "ExtYpos", "ExtZneg", "ExtZpos"), allowances):
         setattr(stock, name, cam._quantity(max(0.0, round(value, 6)), "mm"))
 
 
 def _preset_stock(job):
-    """The stock's bounds on the default zero point, None when only going
-    there tells."""
+    """The stock's bounds on the default zero point (the box around the
+    block when its own zero point is at an odd angle to it), None when
+    only going there tells."""
     if at_default(job):
         return cam.stock_bounds(job)
     block = _json(job, _BLOCK)
     if block and cam.stock(job) is not None:
-        return model_stock.Bounds(*block)
+        own, default = stock_zero(job), default_zero(job)
+        return model_stock.Bounds(*block) if same(own, default) else _moved(block, default.inverse().multiply(own))
     return None
+
+
+def stock_changed(job):
+    """freecad_cam.set_stock: the stock typed on the active zero point is
+    the setup's block from now on. Typed on another zero point than the
+    default one, it is the block on the default one, counted from where
+    it was typed; at an odd angle to it (no box there) it is a box on the
+    zero point it was typed on."""
+    if not hasattr(job, _BLOCK):
+        return  # a setup on one zero point keeps nothing
+    here, default = cam.zero(job), default_zero(job)
+    if cam.stock(job) is None or same(here, default) or not _along(here, default):
+        _remember_block(job)
+        return
+    block = _moved(cam.stock_bounds(job), default.inverse().multiply(here))
+    _keep_block(job, default, block, _allowances(block, _model_bounds(job, default)))
+
+
+class StockEdit(NamedTuple):
+    """What the stock's windows show and take (stock_edit, set_stock)."""
+
+    own: bool  # along the stock's own zero point: the active one is at an odd angle to it
+    model: object  # model.stock.Bounds: the models' box the allowances are counted from
+    box: object  # model.stock.BoxStock, None: a stock of another kind
+    bounds: object  # model.stock.Bounds of the stock
+
+
+def stock_edit(job):
+    """The stock as it is typed: on the active zero point's axes, or, when
+    those are at an odd angle to the stock's own zero point (the block is
+    no box on them), on the stock's own."""
+    own = stock_zero(job)
+    block, box = _json(job, _BLOCK), _json(job, _BOX)
+    if block and box and cam.stock(job) is not None and job.Model.Group and not _along(cam.zero(job), own):
+        return StockEdit(True, _model_bounds(job, own), model_stock.BoxStock(*box), model_stock.Bounds(*block))
+    from avangardecam.engine import stock_size
+
+    return StockEdit(False, stock_size.models_bounds(job), cam.stock(job), cam.stock_bounds(job))
+
+
+def set_stock(job, box):
+    """Make the stock the models' box plus the allowances of box, as
+    stock_edit gave them."""
+    edit = stock_edit(job)
+    if not edit.own:
+        cam.set_stock(job, box)
+        return
+    box.validate()
+    allowances = [box.x_neg_mm, box.x_pos_mm, box.y_neg_mm, box.y_pos_mm, box.z_neg_mm, box.z_pos_mm]
+    _keep_block(job, stock_zero(job), box.bounds(edit.model), allowances)
+    _fit_stock(job, cam.zero(job))
+    cam._place_stock(job)
+    cam._sync_operations(job)
+    job.Document.recompute()
+
+
+def block_seen(job):
+    """The stock's block where it is no box on the active zero point's
+    axes, to draw it as it lies: (its bounds on its own zero point, that
+    zero point as the active one sees it: a placement); else None."""
+    own = stock_zero(job)
+    block = _json(job, _BLOCK)
+    if not block or cam.stock(job) is None or _along(cam.zero(job), own):
+        return None
+    return model_stock.Bounds(*block), cam.zero(job).inverse().multiply(own)
 
 
 # -- moving the active zero point ---------------------------------------------------
@@ -254,8 +377,8 @@ def activate(job, place):
         # until now the setup had one zero point: its preset
         _property(job, "App::PropertyPlacement", _DEFAULT, "Default zero point of the setup (the machine's preset)")
         setattr(job, _DEFAULT, old)
-    if same(old, getattr(job, _DEFAULT)):
-        _remember_block(job)
+    if not hasattr(job, _BLOCK) or same(old, stock_zero(job)):
+        _remember_block(job)  # the stock as its own zero point has it now
     for op in job.Operations.Group:
         if not parked(op):
             _park(op, old)
@@ -283,7 +406,8 @@ def set_default(job):
         return False
     _property(job, "App::PropertyPlacement", _DEFAULT, "Default zero point of the setup (the machine's preset)")
     setattr(job, _DEFAULT, cam.zero(job))
-    _remember_block(job)  # the stock as it is seen from here
+    if _along(cam.zero(job), stock_zero(job)):
+        _remember_block(job)  # the same block, on this zero point's axes from now on
     return True
 
 
@@ -306,9 +430,11 @@ def before_setup_move(job):
 
 
 def after_setup_move(job):
-    """The default zero point went with the setup."""
+    """The default zero point went with the setup, the stock with it."""
     if hasattr(job, _DEFAULT):
         setattr(job, _DEFAULT, cam.zero(job))
+    if hasattr(job, _BLOCK):
+        _remember_block(job)
 
 
 # -- the NC program -------------------------------------------------------------------
@@ -370,16 +496,71 @@ def setup_program(job):
     return stock, [made[op.Name] for op in ops]
 
 
-def on_presets(program):
-    """(the program with every operation in its preset's coordinates, the
-    labels of the operations left out: a tilted tool cannot be shown on
-    the preset). For the simulation, Verify and the cycle time."""
-    setups, left_out = [], []
-    for setup in program.setups:
-        flat, labels = model.setup_on_preset(setup)
-        setups.append(flat)
-        left_out.extend(labels)
-    return replace(program, setups=tuple(setups)), tuple(left_out)
+# -- what runs the program (Play, Verify, the stock a setup leaves) -----------------------
+#
+# The program, its stock and what they show are in the default zero
+# point's coordinates; FreeCAD has the setup's part and stock in the
+# active one's.
+
+
+def to_default(job):
+    """The placement that takes the Job's coordinates (the active zero
+    point's) to the default zero point's; None when they are the same."""
+    if at_default(job):
+        return None
+    return default_zero(job).inverse().multiply(cam.zero(job))
+
+
+def from_default_placement(job):
+    """The placement that takes the default zero point's coordinates to
+    the Job's (the active zero point's); None when they are the same."""
+    place = to_default(job)
+    return None if place is None else place.inverse()
+
+
+def on_default(job, vertices):
+    """Points (n, 3) of the Job's coordinates in the default zero point's."""
+    place = to_default(job)
+    if place is None:
+        return vertices
+    import numpy as np
+
+    m = np.array(place.toMatrix().A, float).reshape(4, 4)
+    return np.asarray(vertices, float) @ m[:3, :3].T + m[:3, 3]
+
+
+def start_mesh(job):
+    """The material the setup starts from (engine.next_setup.start_mesh),
+    in the default zero point's coordinates."""
+    from avangardecam.engine import next_setup
+
+    mesh = next_setup.start_mesh(job)
+    if mesh is None:
+        return _tilted_block(job)
+    if at_default(job):
+        return mesh
+    return mesh._replace(vertices=on_default(job, mesh.vertices))
+
+
+def _tilted_block(job):
+    """The block as a mesh in the default zero point's coordinates when it
+    is no box there (its own zero point at an odd angle to the default
+    one: the program's stock is the box around it); else None."""
+    import numpy as np
+
+    from avangardecam.model import start_stock
+
+    block = _json(job, _BLOCK)
+    own, default = stock_zero(job), default_zero(job)
+    if not block or cam.stock(job) is None or _along(own, default):
+        return None
+    (x0, y0, z0, x1, y1, z1), seen = block, default.inverse().multiply(own)
+    corners = [seen.multVec(FreeCAD.Vector(x, y, z)) for z in (z0, z1) for y in (y0, y1) for x in (x0, x1)]
+    triangles = [
+        (0, 2, 1), (1, 2, 3), (4, 5, 6), (5, 7, 6), (0, 1, 4), (1, 5, 4),
+        (2, 6, 3), (3, 6, 7), (0, 4, 2), (2, 4, 6), (1, 3, 5), (3, 7, 5),
+    ]  # fmt: skip
+    return start_stock.Mesh(np.array([(c.x, c.y, c.z) for c in corners], float), np.array(triangles, np.int64))
 
 
 try:

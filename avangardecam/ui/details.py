@@ -15,6 +15,7 @@ from PySide.QtCore import QT_TRANSLATE_NOOP
 from avangardecam import tr
 from avangardecam.engine import freecad_cam as cam
 from avangardecam.engine import geometry
+from avangardecam.engine import op_zero
 from avangardecam.model import frame as model_frame
 from avangardecam.model import operations as model_operations
 from avangardecam.model import stock as model_stock
@@ -234,7 +235,8 @@ class StockView(DetailsView):
         self.size_label = self.add_row(tr("Size"), "")
         self.top_label = self.add_row(tr("Top Z"), "")
         self.bottom_label = self.add_row(tr("Bottom Z"), "")
-        current = cam.stock(job)
+        edit = op_zero.stock_edit(job)  # on the active zero point's axes, or on the stock's own
+        current = edit.box
         if current is None and ui_next_setup.describe(self, job):
             pass  # a stock left by another setup, a blank's model
         elif current is None:
@@ -250,7 +252,6 @@ class StockView(DetailsView):
                 box.valueChanged.connect(self._schedule_apply)
                 self.form.addRow(tr(label) + ":", box)
                 self.boxes[name] = box
-            self.note.setText(tr("The stock is the model's box plus these allowances."))
         self.add_button(tr("Stock size..."), self._ask_size, "AvangardeCamStockSizeButton")
         self._timer = QtCore.QTimer(self)
         self._timer.setSingleShot(True)
@@ -272,12 +273,12 @@ class StockView(DetailsView):
         except ValueError as exc:
             _show_error(str(exc))
             return
-        if wanted == cam.stock(self.job):
+        if wanted == op_zero.stock_edit(self.job).box:
             return
         doc = self.job.Document
         doc.openTransaction(tr("Stock allowance"))
         try:
-            cam.set_stock(self.job, wanted)
+            op_zero.set_stock(self.job, wanted)
         finally:
             doc.commitTransaction()
 
@@ -298,13 +299,20 @@ class StockView(DetailsView):
             doc.commitTransaction()
 
     def update_view(self):
-        bounds = cam.stock_bounds(self.job)
+        edit = op_zero.stock_edit(self.job)
+        bounds = edit.bounds
         self.size_label.setText(size_text(bounds))
         self.top_label.setText(mm(bounds.z_max))
         self.bottom_label.setText(mm(bounds.z_min))
-        current = cam.stock(self.job)
-        if current is None:
+        current = edit.box
+        if current is None or not self.boxes:
             return
+        note = tr("The stock is the model's box plus these allowances.")
+        if edit.own:  # whose axes: it changes as the zero point is moved
+            from avangardecam.ui import stock_dialog
+
+            note += " " + stock_dialog.OWN_ZERO_NOTE()
+        self.note.setText(note)
         for name, box in self.boxes.items():
             if not box.hasFocus() and not self._timer.isActive():
                 box.blockSignals(True)
@@ -846,6 +854,7 @@ class AdaptiveView(DetailsView):
 
         super().__init__(op.Label, parent=parent)
         self.form.setRowWrapPolicy(QtWidgets.QFormLayout.WrapLongRows)  # the panel is narrow
+        self.layout().insertWidget(self.layout().indexOf(self.form), adaptive_dialog.check_label(self))
         self.op = op
         self.job = cam.setup_of(op)
         model, adaptive = cam.adaptive_of(op)

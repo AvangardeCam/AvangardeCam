@@ -4,7 +4,6 @@
 written as allowances to the Job's stock, so it stays an ordinary BoxStock."""
 
 from avangardecam.engine import ProjectError
-from avangardecam.engine import freecad_cam as cam
 from avangardecam.model import stock as model_stock
 from avangardecam.model import stock_size
 
@@ -21,7 +20,10 @@ def models_bounds(job):
 
 
 def set_size(job, size_x_mm, size_y_mm, size_z_mm):
-    """Make the stock a block of this size with the models in its middle."""
-    box = stock_size.centred(models_bounds(job), size_x_mm, size_y_mm, size_z_mm)
-    cam.set_stock(job, box)
+    """Make the stock a block of this size with the models in its middle,
+    on the axes the stock is typed on (engine.op_zero.stock_edit)."""
+    from avangardecam.engine import op_zero
+
+    box = stock_size.centred(op_zero.stock_edit(job).model, size_x_mm, size_y_mm, size_z_mm)
+    op_zero.set_stock(job, box)
     return box
