@@ -60,7 +60,13 @@ setup is one FreeCAD CAM Job**, each with its own zero point, stock, tools and o
 The zero point is a placement in the part's coordinates (`freecad_cam.zero(job)`); FreeCAD
 works on clones of the model moved by its inverse. Snap-0-Point puts Z0 on a picked face,
 Rotate 0-Point turns it around Z, Next setup starts a setup from the stock the previous one
-leaves. The 3D view shows the part as it lies in the **active setup** (a `SoTransform` on top
+leaves. Custom stock (`engine/custom_stock.py`) makes any setup start from a model of the blank
+in a file, by default moved so that the middle of its box is on the middle of the model's box
+(on the setup's axes; moved, never turned; a blank the file draws around the model already
+stays there; a right click on the stock moves it along the axes). The stock with allowances is
+built around the models' exact box (`engine/exact_box.py` replaces FreeCAD's
+`Path.Main.Stock.shapeBoundBox`: in the GUI FreeCAD takes a shape's box from the triangles
+drawn, which lie inside large arcs). The 3D view shows the part as it lies in the **active setup** (a `SoTransform` on top
 of the scene), so FreeCAD's NaviCube and the Top/Front views are the machine's views.
 
 ### Zero points of operations (experimental)

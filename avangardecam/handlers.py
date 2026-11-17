@@ -324,6 +324,21 @@ def stock_window():
     return stock_dialog.ask(job)
 
 
+def custom_stock(path=None, middle=None):
+    """CAM > Custom stock: the active setup starts from a model of the blank
+    in a file (ui.custom_stock), the first setup made if there is none yet;
+    path given: no window (tests)."""
+    from avangardecam.ui import custom_stock as ui_custom_stock
+    from avangardecam.ui import scene
+
+    edit_stock()
+    doc = FreeCAD.ActiveDocument
+    job = scene.active_setup(doc) if doc is not None else None
+    if job is None or job.Stock is None:
+        return False
+    return ui_custom_stock.ask(job, path, middle)
+
+
 def next_setup():
     """CAM > Next setup: a new setup and the stock it starts from (ui.next_setup)."""
     from avangardecam.ui import next_setup as ui_next_setup

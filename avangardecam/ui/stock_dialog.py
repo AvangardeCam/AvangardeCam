@@ -77,7 +77,13 @@ class StockDialog(QtWidgets.QDialog):
 
         text = tr("The stock is the model's box plus an allowance on each side, in the setup's axes. Type the size of the block and the model is put in its middle on that axis (the same allowance on both sides), or type the allowances one by one. The stock changes on OK.")  # fmt: skip
         if self.fixed:
-            fixed = QtWidgets.QLabel(tr("This stock was made in FreeCAD with a fixed size; OK replaces it by a box around the model."))  # fmt: skip
+            from avangardecam.engine import next_setup
+
+            fixed = QtWidgets.QLabel(
+                tr("This setup starts from a model of the blank or from the stock another setup leaves; OK replaces it by a box around the model.")  # fmt: skip
+                if next_setup.kind(job) in (next_setup.CUSTOM, next_setup.FROM_SETUP) else
+                tr("This stock was made in FreeCAD with a fixed size; OK replaces it by a box around the model.")
+            )  # fmt: skip
             fixed.setWordWrap(True)
             box.addWidget(fixed)
         if self.own:
@@ -96,6 +102,12 @@ class StockDialog(QtWidgets.QDialog):
         )
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
+        # a model of the blank instead of a box (ui.custom_stock): this window closes first
+        self.custom = buttons.addButton(tr("Custom stock..."), QtWidgets.QDialogButtonBox.ActionRole)
+        self.custom.setObjectName("AvangardeCamStockWindowCustom")
+        self.custom.setToolTip(tr("A model of the blank from a file (a casting, a sawn block) instead of a box"))
+        self.custom.clicked.connect(self._custom)
+        self.wants_custom = False
         manual.add_button(buttons, tr("Stock"), text)
         box.addWidget(buttons)
         self.setMinimumWidth(560)
@@ -152,6 +164,10 @@ class StockDialog(QtWidgets.QDialog):
                 )
         return model_stock.BoxStock(**{name: _value(box) for name, box in self.allowances.items()}).validate()
 
+    def _custom(self):
+        self.wants_custom = True
+        self.reject()
+
     def accept(self):
         """Write the stock (one undo step); a refused value keeps the window open."""
         try:
@@ -207,4 +223,10 @@ def ask(job):
     except cam.ProjectError as exc:
         QtWidgets.QMessageBox.warning(FreeCADGui.getMainWindow(), "AvangardeCam", str(exc))
         return False
-    return bool(dialog.exec())
+    if dialog.exec():
+        return True
+    if dialog.wants_custom:  # Custom stock...: its own window
+        from avangardecam.ui import custom_stock
+
+        return custom_stock.ask(job)
+    return False

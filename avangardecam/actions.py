@@ -210,6 +210,7 @@ TABS = (
                         handler="rotate_zero_angle",
                     ),
                     Action("cam_stock", _t("Stock"), "CAM_Shape", tip=_t("The stock in a window: its size with the model in the middle, or the allowances"), handler="stock_window"),  # fmt: skip
+                    Action("cam_custom_stock", _t("Custom stock"), "Std_Import", tip=_t("The setup starts from a model of the blank in a file (a casting, a sawn block: STEP, IGES, BREP, STL), its middle put in the middle of the model"), handler="custom_stock"),  # fmt: skip
                     Action("cam_machine", _t("Machine"), "CAM_Machine"),
                     Action(
                         "cam_tool_library",
