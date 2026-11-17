@@ -28,7 +28,7 @@ two counterbores for screw heads and four M6 holes, machined in two clampings.
 ![AvangardeCam window](images/01_setup.jpg)
 
 - **CAM ribbon** (top), in groups:
-  - **Setup:** Job, Next setup, Snap-0-Point, Move 0-Point, Set 0-Point as default, Reset 0-Point, zero rotation, Stock, Tool library;
+  - **Setup:** Job, Next setup, Snap-0-Point, Move 0-Point, Set 0-Point as default, Reset 0-Point, zero rotation, Stock, Custom stock, Tool library;
   - **Geometry:** Extract boundary edges;
   - **Measure:** measuring;
   - **Milling:** Contour tooling, Facing, Adaptive…;
@@ -89,6 +89,10 @@ Click **Stock** on the ribbon. The stock is the model's box plus an allowance on
 | Allowance top (Z+) | Material above the model (removed by Facing). |
 
 **OK** applies the changes. In the example the stock is 74.20 × 50.22 × 15.20 mm.
+
+### Custom stock
+
+When the part is machined from a casting, a sawn block or a blank machined before, click **Custom stock** on the ribbon (also **Custom stock...** in the Stock window and in the stock's details) and choose its STEP, IGES, BREP or STL file. **Put the middle of the stock in the middle of the model** (ticked at first) moves the blank so that the middle of its box is on the middle of the model's box: the file may draw it anywhere. A blank the file already draws around the model stays there (the foundry's allowances where it put them, e.g. only under the part). Unticked, it always stays where the file draws it, in the part's coordinates. The blank is only moved, never turned: if the model sticks out of it (a blank too small, or lying the other way), a message says by how much on which side. The details show the file and where the blank's middle is; **Put in the middle** puts it there later. A right click on the stock in the list opens its menu: **Move stock...** moves the blank along X, Y and Z of the setup, **Put in the middle**, **Custom stock...**, **Stock...**. **Replace by box with allowances** goes back to a box. Play and Verify start from the blank's material.
 
 ---
 
@@ -307,7 +311,7 @@ Turn the part over to machine its underside. Click **Next setup**.
 | --- | --- |
 | Stock from Setup 1 | The stock is what Setup 1's program leaves (worked out at *Medium*, *Fine*… accuracy). |
 | Standard stock | The model's box with allowances. |
-| Custom stock | A model of the blank (e.g. a casting) from a STEP, IGES, BREP or STL file. |
+| Custom stock | A model of the blank (e.g. a casting) from a STEP, IGES, BREP or STL file, by default with its middle on the model's middle (see [Custom stock](#custom-stock)). |
 
 Click **Make setup**. **Setup 2 (active)** is created.
 

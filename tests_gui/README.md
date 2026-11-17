@@ -231,6 +231,19 @@ cat /tmp/ac.txt
   button says which: 1 of 9 and goes there), played from the start it stops at the first. Closing the
   document closes it too.
 
+- `test_custom_stock.py`: CAM > Custom stock on the ribbon opens its window (the middle checked at
+  first, OK without a file refused in the red line); a casting drawn far away from the part is put
+  with its middle on the model's middle, the list says Blank, the details name the file and say it is
+  on the middle; undo / redo in one step; Custom stock... in the Stock window opens the same window, a
+  blank turned 90° is loaded and a message says the model sticks out (X− and X+ by 7 mm); a blank
+  kept where the file draws it: the details say how far off it is, Put in the middle (undo); the
+  unchecked box remembered and shown in Next setup, checking it chooses Custom stock; an STL blank drawn
+  itself (not its box), a STEP blank as the stock; a blank drawn over the part stays there; a right
+  click on the stock: Move stock... (X+5 Z-2, the message that the model sticks out 3 mm at X−, one
+  undo step), a box's menu without Move stock.
+- `test_exact_stock.py`: a part with round tops of R 515 on a base 2400 long, imported from STEP: the
+  stock with allowances 1 mm (then 3 mm typed) over the arcs' top, from the exact faces, also where
+  FreeCAD's box of the drawn part is under it (`AC_EXACT_STEP`: a part of one's own, top at Z 515).
 - `test_next_setup.py`: CAM > Next setup opens its window (Stock from the last setup checked at first,
   Medium, where the zero point goes; Standard has no accuracy; Custom without a file refused, the window
   stays; Cancel makes nothing); a contour in Setup 1, then Next setup from Setup 1 at Rough (remembered):

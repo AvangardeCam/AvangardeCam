@@ -30,7 +30,7 @@ Nazwy przycisków i pól są takie jak w programie (po angielsku).
 ![Okno AvangardeCam](images/01_setup.jpg)
 
 - **Wstążka CAM** (u góry), podzielona na grupy:
-  - **Setup:** Job, Next setup, Snap-0-Point, Move 0-Point, Set 0-Point as default, Reset 0-Point, obrót zera, Stock, Tool library;
+  - **Setup:** Job, Next setup, Snap-0-Point, Move 0-Point, Set 0-Point as default, Reset 0-Point, obrót zera, Stock, Custom stock, Tool library;
   - **Geometry:** Extract boundary edges;
   - **Measure:** pomiary;
   - **Milling:** Contour tooling, Facing, Adaptive…;
@@ -92,6 +92,10 @@ Kliknij **Stock** na wstążce. Stock to obrys modelu plus naddatek z każdej st
 | Allowance top (Z+) | Materiał nad modelem (do zdjęcia przez Facing). |
 
 Zmiany zapisuje **OK**. W przykładzie stock ma 74,20 × 50,22 × 15,20 mm.
+
+### Custom stock (własny stock z pliku)
+
+Gdy detal robisz z odlewu, ciętego klocka albo surówki obrobionej wcześniej, kliknij **Custom stock** na wstążce (jest też **Custom stock...** w oknie Stock i w Details stocka) i wybierz jego plik STEP, IGES, BREP lub STL. **Put the middle of the stock in the middle of the model** (domyślnie zaznaczone) przesuwa surówkę tak, że środek jej obrysu trafia na środek obrysu modelu — plik może ją rysować gdziekolwiek. Surówka, którą plik już rysuje wokół detalu, zostaje na miejscu (naddatki tam, gdzie dała je odlewnia, np. tylko od spodu). Bez zaznaczenia zawsze zostaje tam, gdzie narysowano ją w pliku (w układzie detalu). Surówka jest tylko przesuwana, nigdy obracana: jeśli model z niej wystaje (za mała albo leży w inną stronę), komunikat mówi, o ile i z której strony. Details pokazują plik i gdzie jest środek surówki; **Put in the middle** ustawia ją na środku później. Prawy klik na Stock w liście otwiera menu: **Move stock...** przesuwa surówkę po osiach X, Y, Z mocowania, **Put in the middle**, **Custom stock...**, **Stock...**. **Replace by box with allowances** wraca do pudełka. Play i Verify zaczynają od materiału surówki.
 
 ---
 
@@ -310,7 +314,7 @@ Detal odwracasz, żeby obrobić spód. Kliknij **Next setup**.
 | --- | --- |
 | Stock from Setup 1 | Startowy materiał to to, co zostaje po programie Setup 1 (wyliczane z dokładnością *Medium* / *Fine*…). |
 | Standard stock | Obrys modelu z naddatkami. |
-| Custom stock | Model surówki (np. odlewu) z pliku STEP, IGES, BREP lub STL. |
+| Custom stock | Model surówki (np. odlewu) z pliku STEP, IGES, BREP lub STL, domyślnie środkiem na środku modelu (patrz [Custom stock](#custom-stock-własny-stock-z-pliku)). |
 
 Kliknij **Make setup**. Powstaje **Setup 2 (active)**.
 

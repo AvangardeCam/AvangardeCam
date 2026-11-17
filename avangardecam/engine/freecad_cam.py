@@ -39,6 +39,11 @@ from avangardecam.model import tools as model_tools
 
 __all__ = ["ProjectError"]  # raised by every function here
 
+# FreeCAD's stock around the models' exact box, not the triangles drawn (engine.exact_box)
+from avangardecam.engine import exact_box as _exact_box  # noqa: E402
+
+_exact_box.install()
+
 
 def _value(quantity, unit):
     """A FreeCAD quantity as a float in the given unit."""

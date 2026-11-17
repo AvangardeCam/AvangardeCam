@@ -7,8 +7,9 @@ again, and the stock it starts from, chosen in a window:
   Verify cuts it at the accuracy chosen (Rough, Medium, Fine) in a thread
   of its own, with a busy window (engine.next_setup.left);
 - Standard stock: the model's box with allowances, as every new setup;
-- Custom stock: a model of the blank from a file (a casting, STEP or STL)
-  lying in the part's coordinates.
+- Custom stock: a model of the blank from a file (a casting, STEP or STL),
+  by default with its middle on the model's middle (ui.custom_stock), else
+  lying in the part's coordinates as the file draws it.
 
 The new setup's zero point is on the flat face selected when Next setup
 is clicked (as Snap-0-Point puts it); without one it is that of the last
@@ -29,12 +30,13 @@ from avangardecam import params, tr
 from avangardecam.engine import ProjectError
 from avangardecam.engine import freecad_cam as cam
 from avangardecam.engine import geometry
+from avangardecam.engine import custom_stock as engine_custom_stock
 from avangardecam.engine import next_setup as engine
+from avangardecam.ui import custom_stock as ui_custom_stock
 from avangardecam.ui import postprocessors
 from avangardecam.ui import verify as ui_verify
 
 _LAST_ACCURACY = "LastNextSetupAccuracy"
-_LAST_DIR = "LastBlankDir"
 _POLL_MS = 100
 FROM_SETUP, STANDARD, CUSTOM = "setup", "standard", "custom"
 
@@ -98,10 +100,13 @@ class NextSetupDialog(QtWidgets.QDialog):
         browse.clicked.connect(self._browse)
         row.addWidget(browse)
         box.addLayout(row)
-        note = QtWidgets.QLabel(tr("The blank must lie where the part lies in the project, as the foundry draws it over the part."))
-        note.setWordWrap(True)
-        note.setIndent(24)
-        box.addWidget(note)
+        row = QtWidgets.QHBoxLayout()
+        row.addSpacing(24)
+        self.middle = ui_custom_stock.middle_box()
+        self.middle.setObjectName("AvangardeCamNextSetupMiddle")
+        self.middle.toggled.connect(lambda _on: self.custom.setChecked(True))
+        row.addWidget(self.middle, 1)
+        box.addLayout(row)
 
         for k, button in enumerate((self.from_setup, self.standard, self.custom)):
             self.group.addButton(button, k)
@@ -134,16 +139,7 @@ class NextSetupDialog(QtWidgets.QDialog):
         self.accuracy.setEnabled(self.from_setup.isChecked())
 
     def _browse(self):
-        start = params().GetString(_LAST_DIR, "")
-        path, _filter = QtWidgets.QFileDialog.getOpenFileName(
-            self, tr("Model of the blank"), start,
-            tr("Models") + " (*.step *.stp *.STEP *.STP *.iges *.igs *.brep *.brp *.stl *.STL *.obj *.ply)",
-        )  # fmt: skip
-        if path:
-            import os
-
-            params().SetString(_LAST_DIR, os.path.dirname(path))
-            self.file.setText(path)
+        if ui_custom_stock.browse(self, self.file):
             self.custom.setChecked(True)
 
     def _accept(self):
@@ -152,14 +148,16 @@ class NextSetupDialog(QtWidgets.QDialog):
             return
         if self.from_setup.isChecked():
             params().SetInt(_LAST_ACCURACY, self.accuracy.currentData())
+        if self.custom.isChecked():
+            ui_custom_stock.remember_middle(self.middle.isChecked())
         self.accept()
 
     def choice(self):
-        """(FROM_SETUP, setup Name, cells) / (STANDARD,) / (CUSTOM, path)."""
+        """(FROM_SETUP, setup Name, cells) / (STANDARD,) / (CUSTOM, path, middle)."""
         if self.from_setup.isChecked():
             return FROM_SETUP, self.setups.currentData(), self.accuracy.currentData()
         if self.custom.isChecked():
-            return CUSTOM, self.file.text().strip()
+            return CUSTOM, self.file.text().strip(), self.middle.isChecked()
         return (STANDARD,)
 
 
@@ -241,18 +239,21 @@ def run(doc, models, picked=None, choice=None):
     except ProjectError as exc:
         _error(str(exc))
         return None
+    loaded = None
     doc.openTransaction(tr("Next setup"))
     try:
         job = cam.new_setup(doc, place)
         if choice[0] == FROM_SETUP:
             engine.set_stock_from_setup(job, previous, mesh, choice[2])
-        elif choice[0] == CUSTOM:
-            engine.set_custom_stock(job, choice[1])
+        elif choice[0] == CUSTOM:  # (CUSTOM, path): as before, where the file draws it
+            loaded = engine_custom_stock.load(job, choice[1], choice[2] if len(choice) > 2 else False)
     except ProjectError as exc:
         doc.abortTransaction()
         _error(str(exc))
         return None
     doc.commitTransaction()
+    if loaded is not None and loaded.out:
+        _error(ui_custom_stock.out_text(loaded.out))
     return job
 
 
@@ -304,17 +305,22 @@ def describe(view, job):
         view.add_button(tr("Work it out again"), lambda: work_out_again(job), "AvangardeCamStockWorkOutAgain")
     else:
         view.add_row(tr("Blank"), getattr(job.Stock, engine.FILE_PROPERTY, ""))
-        view.note.setText(tr("A model of the blank, lying where the part lies in the project."))
+        view.middle_label = view.add_row(tr("Middle"), ui_custom_stock.middle_text(job))  # update_view follows
+        view.note.setText(tr("A model of the blank from a file, moved but never turned. Put in the middle: its middle on the model's middle."))  # fmt: skip
+        view.add_button(tr("Put in the middle"), lambda: ui_custom_stock.centre(job), "AvangardeCamStockPutInMiddle")
     view.add_button(tr("Replace by box with allowances"), view._replace)
     return True
 
 
 def show_stock(job, on):
-    """Draw a stock left by another setup itself (its mesh, in the part's
-    coordinates as the view is) instead of its box (ui.scene.apply)."""
-    if engine.kind(job) != engine.FROM_SETUP:
-        return
+    """Draw a stock left by another setup, or a blank from a mesh file
+    (STL...), itself (its mesh, in the part's coordinates as the view is)
+    instead of its box (ui.scene.apply). A blank from a STEP file is the
+    Job's stock itself: drawn as it is."""
+    kind = engine.kind(job)
     src = engine.source(job)
+    if kind != engine.FROM_SETUP and not (kind == engine.CUSTOM and engine._is_mesh(src)):
+        return
     for obj, visible in ((src, on), (job.Stock, False)):
         vo = getattr(obj, "ViewObject", None) if obj is not None else None
         if vo is not None and vo.Visibility != visible:

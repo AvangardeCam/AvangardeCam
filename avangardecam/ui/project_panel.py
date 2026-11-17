@@ -344,16 +344,23 @@ class ProjectPanel(QtWidgets.QWidget):
             self._pushing_selection = False
 
     def _on_menu(self, at):
-        """A right click on an operation or a sketch selects it and opens its menu."""
+        """A right click on an operation, a sketch or a stock selects it and opens its menu."""
         item = self.tree.itemAt(at)
         doc = FreeCAD.ActiveDocument
-        if item is None or doc is None or item.data(0, KIND_ROLE) not in (OPERATION, SKETCH):
+        if item is None or doc is None or item.data(0, KIND_ROLE) not in (OPERATION, SKETCH, STOCK):
             return
         obj = doc.getObject(item.data(0, NAME_ROLE))
         if obj is None:
             return
         self.tree.setCurrentItem(item)
-        if item.data(0, KIND_ROLE) == SKETCH:
+        if item.data(0, KIND_ROLE) == STOCK:
+            from avangardecam.ui import custom_stock
+
+            job = cam.setup_of(obj)
+            if job is None:
+                return
+            self.menu = custom_stock.stock_menu(job, self)
+        elif item.data(0, KIND_ROLE) == SKETCH:
             self.menu = sketch_visibility.menu(obj, self)
         else:
             self.menu = operation_menu(obj, self)

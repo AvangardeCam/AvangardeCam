@@ -263,7 +263,7 @@ testy `tests/test_start_stock.py` i `tests_gui/test_next_setup.py`):
 - **Standard stock**: pudełko z naddatkami, jak każde nowe mocowanie.
 - **Custom stock**: model półfabrykatu z pliku (odlew od odlewni), STEP/IGES/BREP jako bryła
   (`Part::Feature`), STL/OBJ/PLY jako siatka (musi być zamknięta). Leży tam, gdzie go
-  narysowano, czyli w układzie detalu; ustawiania odlewu względem detalu nie ma (do decyzji).
+  narysowano, czyli w układzie detalu — albo (od 2026-11-17, niżej) środkiem na środku modelu.
 - Stock Joba to wtedy `Part::FeaturePython` (Job FreeCADa wymaga proxy widoku stocka,
   `IconViewProvider` „Stock”) z własnościami `AvangardeStockKind/Source/From/Accuracy/Made/File`,
   w układzie mocowania: bryła odlewu albo **pudełko** siatki (operacje FreeCADa czytają tylko
@@ -317,6 +317,63 @@ testy `tests/test_start_stock.py` i `tests_gui/test_next_setup.py`):
   (`_no_default_tool`): wczytanie jego bryły (PartDesign z pliku) zamykało otwartą
   transakcję w GUI, przez co nowe mocowanie (też z Snap-0-Point „New setup”) było kilkoma
   krokami undo, a ostatni cofał się do połowy. Frez i tak był od razu usuwany.
+
+### Custom stock: własny stock z pliku w każdym mocowaniu (2026-11-17)
+
+Prośba usera: „trzeba dodać możliwość importowania custom stocka, najłatwiej znajdywać środek
+stocka i wrzucać go na środek modelu”. Przycisk **Custom stock** na wstążce (grupa Setup, obok
+Stock), przycisk **Custom stock...** w oknie Stock (zamyka je i otwiera okno Custom stock) i w
+Details stocka; okno: plik + „Put the middle of the stock in the middle of the model”
+(domyślnie zaznaczone, pamiętane w `LastBlankInMiddle`, wspólne z Next setup).
+
+- Ten sam rodzaj stocka co Custom w Next setup (`next_setup.set_custom_stock`, CUSTOM, źródło w
+  układzie detalu), więc Play/Verify/Adaptive/Simulate działają jak dotąd. Nowe moduły:
+  `model/custom_stock.py` (środek obrysu, przesunięcie, gdzie model wystaje — czysty Python),
+  `engine/custom_stock.py` (`load`, `centre`, `off_middle`, `sticking_out`),
+  `ui/custom_stock.py` (okno, jeden krok undo, komunikaty), testy `tests/test_custom_stock.py`
+  i `tests_gui/test_custom_stock.py`.
+- Środki liczone na osiach **mocowania** (to, co user widzi i mierzy): obrys modeli taki, wokół
+  którego powstaje zwykły stock (`stock_size.models_bounds`), i obrys surówki
+  (`optimalBoundingBox`, ciaśniejszy niż `BoundBox` przy ścianach krzywych). Przesunięcie
+  obracane do układu detalu (`zero.Rotation`) i dopisywane do `Placement` źródła, więc stock
+  idzie za zerem jak dotąd (test z mocowaniem od spodu, sprawdzony mutacją).
+- Obrysy z **dokładnych ścian** (`optimalBoundingBox(False, False)`, także modelu:
+  `custom_stock.models_bounds`), nie `BoundBox`: w GUI, gdy kształt jest już narysowany, OCC
+  bierze `BoundBox` z trójkątów widoku, a te leżą wewnątrz dużych łuków. Plik testowy usera
+  (Detal_testowy_Soraluce, 1030 × 2400 × 1260): góra obrysu 513,56 zamiast 515 (−1,44 mm),
+  przez co środek wychodził o 0,72 mm za nisko. Bez GUI tego nie widać (FreeCADCmd nie
+  rysuje), test silnika sprawdza tylko dokładny obrys łuku. Ten sam błąd ma zwykły stock z
+  naddatkami (`PathStock.shapeBoundBox`): na tym detalu jego góra wychodzi 0,44 mm POD górą
+  detalu — naprawione 2026-11-18 na prośbę usera („popraw też zwykły stock”):
+  `engine/exact_box.py` podmienia `Path.Main.Stock.shapeBoundBox` (wołane przez nazwę w
+  module, więc bierze je `StockFromBase.execute`, Job FreeCADa, `stock_size.models_bounds`,
+  `_place_stock`) na obrys z dokładnych ścian; instalowane przy imporcie `freecad_cam` (jak
+  strażnik operacji w `op_zero`). Pliki otwarte ze starym stockiem przeliczą się przy
+  najbliższym recompute (stock robi się poprawny). Na detalu usera: góra stocka 1 mm nad górą
+  detalu (było −0,44). Test GUI `test_exact_stock.py`; mojego kształtu (płyty z łukiem R 515
+  jak u usera, 2400 długości) FreeCAD akurat NIE zaniża — wierzchołek siatki trafia w szczyt
+  łuku, więc „za niski obrys” tylko w logu; na pliku usera (`AC_EXACT_STEP`) zaniża i test
+  przechodzi.
+- **Surówka narysowana wokół detalu zostaje** (decyzja usera 2026-11-18, „okej”): gdy obrys
+  modelu mieści się w obrysie surówki z pliku (do `FITS_MM` = 0,1 mm, trójkąty STL na łukach),
+  `load` jej nie przesuwa nawet z kratką; środek tylko dla surówki narysowanej gdzie indziej.
+  Odlew usera ma 8 mm naddatku tylko od spodu — środek dzieliłby go 4/4.
+- **Move stock...** (prośba usera: przesuwanie po osiach po prawym kliku na stock): menu Stock
+  w liście projektu (`custom_stock.stock_menu`: Move stock..., Put in the middle dla CUSTOM;
+  Custom stock..., Stock... zawsze), okno X/Y/Z na osiach mocowania (`engine.custom_stock.move`,
+  jeden krok undo, komunikat gdy model wystaje). Prawy klik w 3D nie — stock w 3D nie jest
+  klikalny (Selectable = False, żeby klikać ściany modelu przez niego).
+- **Tylko przesunięcie, bez obrotu** (moja decyzja: „najłatwiej”). Gdy obrys modelu wystaje
+  poza obrys surówki (> 0,01 mm), surówka i tak jest wczytywana, a komunikat mówi o ile i z
+  której strony (np. odlew obrócony o 90°). Sprawdzane są tylko obrysy: odlew z kieszenią tam,
+  gdzie detal jest pełny, nie jest wykrywany.
+- Details: wiersz **Middle** („on the model's middle” albo „X … Y … Z … mm off the model's”,
+  odświeżany w `update_view`) i przycisk **Put in the middle** (jeden krok undo).
+- Widok: surówka z pliku siatki (STL…) rysowana jest sama, przezroczysta, zamiast pudełka
+  wokół niej (`ui.next_setup.show_stock`, jak stock z mocowania); wcześniej było widać tylko
+  pudełko (zgłoszenie usera 2026-11-17). Surówka ze STEP-a to sam stock Joba, rysowana jak jest.
+- Next setup: Custom ma tę samą kratkę; `choice()` daje `(CUSTOM, ścieżka, środek)`, stara
+  postać `(CUSTOM, ścieżka)` działa jak dotąd (bez przesuwania).
 
 ### Widok 3D (`ui/scene.py`)
 

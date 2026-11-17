@@ -253,6 +253,7 @@ class StockView(DetailsView):
                 self.form.addRow(tr(label) + ":", box)
                 self.boxes[name] = box
         self.add_button(tr("Stock size..."), self._ask_size, "AvangardeCamStockSizeButton")
+        self.add_button(tr("Custom stock..."), self._ask_custom, "AvangardeCamStockCustomButton")
         self._timer = QtCore.QTimer(self)
         self._timer.setSingleShot(True)
         self._timer.timeout.connect(self.apply)
@@ -290,6 +291,14 @@ class StockView(DetailsView):
             self.apply()  # an allowance still being typed goes in first
         stock_size.ask(self.job)
 
+    def _ask_custom(self):
+        """A model of the blank from a file instead (ui.custom_stock)."""
+        from avangardecam.ui import custom_stock
+
+        if self._timer.isActive():
+            self._timer.stop()  # the stock is replaced: an allowance being typed is dropped
+        custom_stock.ask(self.job)
+
     def _replace(self):
         doc = self.job.Document
         doc.openTransaction(tr("Stock allowance"))
@@ -304,6 +313,11 @@ class StockView(DetailsView):
         self.size_label.setText(size_text(bounds))
         self.top_label.setText(mm(bounds.z_max))
         self.bottom_label.setText(mm(bounds.z_min))
+        middle = getattr(self, "middle_label", None)  # a blank's model (ui.next_setup.describe)
+        if middle is not None:
+            from avangardecam.ui import custom_stock
+
+            middle.setText(custom_stock.middle_text(self.job))
         current = edit.box
         if current is None or not self.boxes:
             return
