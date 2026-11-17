@@ -108,7 +108,7 @@ class FileButton(QtWidgets.QToolButton):
         self.setPopupMode(QtWidgets.QToolButton.InstantPopup)
         menu = QtWidgets.QMenu(self)
         menu.setObjectName("AvangardeCamFileMenu")
-        for action in actions.FILE_MENU:
+        for action in actions.shown_file_menu():
             if action is actions.SEPARATOR:
                 menu.addSeparator()
                 continue
@@ -179,7 +179,7 @@ class RibbonBar(QtWidgets.QWidget):
         self.tabs.setObjectName("AvangardeCamTabs")
         self.tabs.setDocumentMode(True)
         self.tabs.setUsesScrollButtons(True)
-        for tab in actions.TABS:
+        for tab in actions.shown_tabs():
             self.tabs.addTab(self._scrollable(RibbonPage(tab)), tr(tab.text))
         corner = QtWidgets.QWidget(self)
         corner.setObjectName("AvangardeCamQuickAccess")

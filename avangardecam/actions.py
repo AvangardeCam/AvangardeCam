@@ -4,7 +4,9 @@
 
 The widgets are built from these tables, so adding a function means adding
 one line here and, once it does something, a handler in handlers.py.
-An action without a handler is a placeholder.
+An action without a handler is a placeholder: it stays in the catalog,
+but the File menu and the ribbon do not show it (shown_file_menu,
+shown_tabs).
 
 Texts are English source strings; QT_TRANSLATE_NOOP marks them for lupdate
 and the widgets translate them when they are built.
@@ -376,6 +378,36 @@ TABS = (
         ),
     ),
 )
+
+
+def shown_file_menu():
+    """The File menu without placeholders: a button that does nothing only
+    confuses the user. No separator at the ends or two in a row."""
+    result = []
+    for action in FILE_MENU:
+        if action is SEPARATOR:
+            if result and result[-1] is not SEPARATOR:
+                result.append(SEPARATOR)
+        elif action.handler:
+            result.append(action)
+    while result and result[-1] is SEPARATOR:
+        result.pop()
+    return tuple(result)
+
+
+def shown_tabs():
+    """The ribbon without placeholders; a group or a tab left without a
+    working button is left out as well."""
+    tabs = []
+    for tab in TABS:
+        groups = []
+        for group in tab.groups:
+            working = tuple(a for a in group.actions if a.handler)
+            if working:
+                groups.append(Group(group.key, group.text, working))
+        if groups:
+            tabs.append(Tab(tab.key, tab.text, tuple(groups)))
+    return tuple(tabs)
 
 
 def all_actions():
