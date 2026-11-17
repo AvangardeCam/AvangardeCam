@@ -1,4 +1,4 @@
-# Stage 1 GUI test: AvangardeCam layout, STEP import, placeholders,
+# Stage 1 GUI test: AvangardeCam layout, STEP import, no placeholders shown,
 # File menu and the switch to FreeCAD and back.
 #
 # Run (see README.md):
@@ -10,6 +10,7 @@ import traceback
 import FreeCAD
 import FreeCADGui
 import avangardecam
+from avangardecam import actions
 from PySide import QtCore, QtGui, QtWidgets
 
 OUT = os.environ.get("AC_TEST_OUT", "/tmp")
@@ -153,20 +154,20 @@ def step4():
     ribbon.tabs.setCurrentIndex(1)
     facing = ribbon.findChild(QtWidgets.QToolButton, "AvangardeCam_cam_facing")
     check(facing is not None and facing.isVisible(), "CAM tab shows the Facing button")
-    button = ribbon.findChild(QtWidgets.QToolButton, "AvangardeCam_cam_profile")
-    check(button is not None and button.isVisible(), "CAM tab shows the Profile button")
     extract = ribbon.findChild(QtWidgets.QToolButton, "AvangardeCam_cam_extract_boundary")
     check(extract is not None and extract.isVisible(), "CAM tab shows Extract boundary edges too")
-    button.click()
+    placeholders = [a.key for a in actions.all_actions() if not a.handler]
+    shown = [k for k in placeholders if ribbon.findChild(QtCore.QObject, "AvangardeCam_" + k) is not None]
+    check(placeholders and not shown, "no placeholder on the ribbon or in the File menu: {}".format(shown))
+    for key in ("draw", "modify", "measure"):
+        group = ribbon.findChild(QtWidgets.QWidget, "AvangardeCamGroup_" + key)
+        check(group is None, "no empty group " + key)
     later(300, step5)
 
 
 @safe
 def step5():
-    message = mw().statusBar().currentMessage()
-    check(message == "Profile: not implemented yet", "status bar: " + message)
-    check(layout().panel.view.title.text() == "Profile", "details show the placeholder")
-    shot("04_cam_profile")
+    shot("04_cam_tab")
     button = layout().ribbon.file_button
     button.menu().popup(button.mapToGlobal(QtCore.QPoint(0, button.height())))
     later(500, step6)

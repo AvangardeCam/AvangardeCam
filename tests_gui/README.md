@@ -14,7 +14,7 @@ cat /tmp/ac.txt
 
 ## GUI tests
 
-- `test_layout.py`: stage 1, the layout, placeholders, Extract boundary edges also on the CAM tab, File menu, expert mode and back.
+- `test_layout.py`: stage 1, the layout, no placeholder shown (nor an empty group), Extract boundary edges also on the CAM tab, File menu, expert mode and back.
 - `test_project.py`: stage 2, STEP import creating the job, stock allowances with undo,
   tools from the shop's library (Ø beside the name; a click on the T or Ø header sorts
   smallest first, again largest first, also with a filter), selection list <-> 3D, save and reopen.

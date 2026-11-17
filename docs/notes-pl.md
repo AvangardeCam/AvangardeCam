@@ -1797,6 +1797,10 @@ src/Mod/AvangardeCam/
 1. **Layout**: wstążka File/CAD/CAM, lista i szczegóły, podgląd 3D z kostką, tryb
    kiosku i eksperta. Funkcje to placeholdery. Działają tylko pliki
    (New/Open/Save/Import STEP) i przejście do FreeCADa.
+   Placeholdery (akcje bez `handler` w `actions.py`) zostają w katalogu, ale wstążka
+   i menu File ich nie pokazują (`actions.shown_tabs` / `shown_file_menu`): przycisk,
+   który nic nie robi, tylko myli użytkownika. Grupa albo zakładka bez działającego
+   przycisku znika razem z nimi. Przycisk pojawia się sam, gdy dostanie handler.
 2. **Projekt na żywo** (zrobione): lista pokazuje prawdziwy model, półfabrykat i
    narzędzia (biblioteka warsztatu), a szczegóły pokazują ich dane. Zaznaczanie jest
    wspólne dla listy i widoku 3D.
