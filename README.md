@@ -7,6 +7,8 @@ AvangardeCam is a FreeCAD workbench (add-on). It hides the many settings of Free
 behind a few windows that speak the language of the shop floor: pick lines or faces in the
 3D view, choose a tool from the library, get a Heidenhain plain language program (`.H`).
 
+Website: **[avangardecam.eu](https://avangardecam.eu)** (videos, training, rates).
+
 > **Status: beta.** It is used on real parts, but it is young. Always check the program in
 > the simulation and on the machine (dry run, reduced feed) before cutting.
 
@@ -102,6 +104,9 @@ the GUI tests in a real FreeCAD window on the demo model `tests_gui/models/demo_
 Remote consulting and training in **English and Polish**: AvangardeCam and FreeCAD CAM,
 Heidenhain TNC programming, writing a postprocessor for your machine, AI-assisted
 ("vibe coding") CNC courses for schools.
+
+Details and rates: **[avangardecam.eu/training](https://avangardecam.eu/training/)**
+(Polish: [avangardecam.eu/pl/szkolenia](https://avangardecam.eu/pl/szkolenia/)).
 
 Contact: **[AvangardeCam@proton.me](mailto:AvangardeCam@proton.me)**
 
