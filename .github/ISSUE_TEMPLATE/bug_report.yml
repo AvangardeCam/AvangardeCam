@@ -1,0 +1,50 @@
+name: Bug report
+description: Something does not work or gives a wrong program
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you! A small file that shows the problem helps the most.
+        **Do not attach parts or drawings of your customers** — make a simple demo part instead.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, what did you get?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open the attached file
+        2. CAM > Contour, pick ...
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: avangardecam
+    attributes:
+      label: AvangardeCam version
+      description: From package.xml or the release you downloaded (e.g. 0.1.1, 0.2.0-experimental)
+    validations:
+      required: true
+  - type: input
+    id: freecad
+    attributes:
+      label: FreeCAD version and system
+      description: Help > About FreeCAD > Copy to clipboard, or e.g. "FreeCAD 1.1.4, Windows 11"
+    validations:
+      required: true
+  - type: textarea
+    id: files
+    attributes:
+      label: Files
+      description: Drag in the .FCStd file (zipped) and, for a wrong program, the generated .H file.
+  - type: textarea
+    id: log
+    attributes:
+      label: Report view / Python console messages
+      render: text

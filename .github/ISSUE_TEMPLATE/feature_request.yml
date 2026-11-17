@@ -1,0 +1,15 @@
+name: Idea
+description: A function or a change that would help your work
+labels: [idea]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: What do you need?
+      description: The job on the machine, not only the button. A sketch or a program example helps.
+    validations:
+      required: true
+  - type: textarea
+    id: now
+    attributes:
+      label: How do you do it today?
