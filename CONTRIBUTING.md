@@ -10,11 +10,11 @@ has to be one the author knows and trusts.
 
 That does not close the door:
 
-- **Bugs:** open an [issue](https://github.com/AvangardeCam/AvangardeCAM/issues/new/choose)
+- **Bugs:** open an [issue](https://github.com/AvangardeCam/AvangardeCam/issues/new/choose)
   with a small demo file. Never attach parts or drawings of your customers.
 - **Ideas:** open an issue with the *Idea* form — what you need on the machine, not only
   which button.
-- **Questions:** [Discussions](https://github.com/AvangardeCam/AvangardeCAM/discussions).
+- **Questions:** [Discussions](https://github.com/AvangardeCam/AvangardeCam/discussions).
 
 ## Add your own functions: fork it
 

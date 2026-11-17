@@ -1,7 +1,7 @@
 blank_issues_enabled: false
 contact_links:
   - name: Questions and help
-    url: https://github.com/AvangardeCam/AvangardeCAM/discussions
+    url: https://github.com/AvangardeCam/AvangardeCam/discussions
     about: How do I ...? Ask here, not in issues.
   - name: Training and consulting
     url: https://avangardecam.eu/training/
