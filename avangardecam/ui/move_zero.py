@@ -6,13 +6,20 @@ A window that does not block the 3D view: the shift of the active setup's
 zero point along its own X, Y and Z is typed, or taken from a wall of the
 part: Select wall, then a click on a flat face, puts the face's plane
 through the zero point (the shift the shortest way to it; another wall
-after it adds to the first, so two or three walls give a corner). A face
-selected before the window opens is taken at once, as Snap-0-Point does.
+after it adds to the first, so two or three walls give a corner). Select
+circle, then a click on a round edge or the wall of a round hole or pin,
+puts the zero point in the middle of the circle at the mouth of its hole
+(ui.circle_zero). A face
+or round edge selected before the window opens is taken at once, as
+Snap-0-Point does.
 
 With "5 axes" ticked (shown only when edition.FIVE_AXES) the zero point also turns: by angles typed about
 its own X, Y and Z (in this order, about the axes as they stand before
-the turn), and Select wall turns its Z out of the wall, square to it
-("Z out of the wall"), so that the tool stands on that wall.
+the turn), and Select wall turns its Z out of the wall, square to it,
+Select circle along the circle's axis, out of the part ("Z out of the
+model"), so that the tool stands on that wall or circle; ticked after the
+pick, they turn the zero point then. Both tick boxes keep their state for
+the next window (5-axis work picks one wall after another).
 
 While the window is open the view shows where the zero point would be:
 a cross of the three axes (X red, Y green, Z blue) and a yellow line to it
@@ -26,12 +33,13 @@ import FreeCADGui
 
 from PySide import QtCore, QtWidgets
 
-from avangardecam import edition, tr
+from avangardecam import edition, params, tr
 from avangardecam.engine import ProjectError
 from avangardecam.engine import freecad_cam as cam
 from avangardecam.engine import move_zero as engine
 from avangardecam.model import move_zero as model
 from avangardecam.model import op_zero as model_zero
+from avangardecam.ui import circle_zero
 from avangardecam.ui import details
 
 STATUS_TIMEOUT_MS = 4000
@@ -39,6 +47,9 @@ STATUS_TIMEOUT_MS = 4000
 # notification and after picking.py has moved a click to a sketch line
 _READ_MS = 50
 _PREVIEW_NAME = "AvangardeCamMoveZeroPreview"
+# the tick boxes keep their state for the next window: 5-axis work picks one wall after another
+_LAST_5_AXES = "LastMoveZero5Axes"
+_LAST_Z_OUT = "LastMoveZeroZOut"
 _AXIS_COLORS = ((1.0, 0.0, 0.0), (0.0, 0.7, 0.0), (0.0, 0.3, 1.0))
 _LINK_COLOR = (1.0, 1.0, 0.0)
 # the cross's arms, as a share of the stock's largest size
@@ -185,6 +196,9 @@ class MoveZeroDialog(QtWidgets.QDialog):
         self.setWindowTitle(tr("Move 0-Point"))
         self.job = job
         self._filling = False
+        # the last wall or circle picked: (its turn of Z out of the model,
+        # what the window says of it, whether the tool stands along it already)
+        self._picked = None
         layout = QtWidgets.QVBoxLayout(self)
         head = QtWidgets.QLabel("<b>{}</b>".format(tr("Zero point of {}").format(job.Label)))
         layout.addWidget(head)
@@ -197,13 +211,23 @@ class MoveZeroDialog(QtWidgets.QDialog):
             tr("Click it, then a flat face of the model: the zero point moves the shortest way onto the face's plane")
         )
         self.wall_button.toggled.connect(self._wall_toggled)
+        self.circle_button = QtWidgets.QPushButton(tr("Select circle"))
+        self.circle_button.setObjectName("AvangardeCamMoveZeroCircle")
+        self.circle_button.setCheckable(True)
+        self.circle_button.setAutoDefault(False)
+        self.circle_button.setToolTip(
+            tr("Click it, then a round edge of the model or the wall of a round hole or pin: the zero point goes to the middle of the circle at the mouth of the hole, where a tool comes in from outside the part")  # fmt: skip
+        )
+        self.circle_button.toggled.connect(self._circle_toggled)
         self.wall_label = QtWidgets.QLabel()
         self.wall_label.setObjectName("AvangardeCamMoveZeroWallText")
         self.wall_label.setWordWrap(True)
         row = QtWidgets.QHBoxLayout()
         row.addWidget(self.wall_button)
-        row.addWidget(self.wall_label, 1)
+        row.addWidget(self.circle_button)
+        row.addStretch(1)
         layout.addLayout(row)
+        layout.addWidget(self.wall_label)
 
         form = QtWidgets.QFormLayout()
         self.boxes = []
@@ -227,11 +251,12 @@ class MoveZeroDialog(QtWidgets.QDialog):
         self.turn_group.setObjectName("AvangardeCamMoveZeroTurn")
         turn_layout = QtWidgets.QVBoxLayout(self.turn_group)
         turn_layout.setContentsMargins(0, 0, 0, 0)
-        self.z_out = QtWidgets.QCheckBox(tr("Z out of the wall"))
+        self.z_out = QtWidgets.QCheckBox(tr("Z out of the model"))
         self.z_out.setObjectName("AvangardeCamMoveZeroZOut")
-        self.z_out.setChecked(True)
+        self.z_out.setChecked(params().GetBool(_LAST_Z_OUT, True))
+        self.z_out.toggled.connect(self._z_out_toggled)
         self.z_out.setToolTip(
-            tr("Select wall also turns the zero point's Z out of the wall, square to it: the tool stands on that wall")
+            tr("Select wall and Select circle also turn the zero point's Z out of the part: square to the wall, along the circle's axis. The tool stands on that wall or circle")  # fmt: skip
         )
         turn_layout.addWidget(self.z_out)
         turn_form = QtWidgets.QFormLayout()
@@ -251,7 +276,9 @@ class MoveZeroDialog(QtWidgets.QDialog):
             self.turn_boxes.append(box)
         turn_layout.addLayout(turn_form)
         layout.addWidget(self.turn_group)
-        self.turn_group.setVisible(False)
+        on = edition.FIVE_AXES and params().GetBool(_LAST_5_AXES, False)
+        self.five_axes.setChecked(on)
+        self.turn_group.setVisible(on)
         self.five_axes.toggled.connect(self._five_axes_toggled)
 
         note = QtWidgets.QLabel(
@@ -267,9 +294,15 @@ class MoveZeroDialog(QtWidgets.QDialog):
 
         self._observer = _Selection(self)
         FreeCADGui.Selection.addObserver(self._observer)
-        picked = selected_face()
-        if picked is not None:  # selected first, as for Snap-0-Point
-            self._use_wall(picked)
+        # selected first, as for Snap-0-Point: a round edge or a hole's wall
+        # gives its circle, a flat face its wall
+        rounded = circle_zero.selected_round()
+        if rounded is not None and circle_zero.is_round(rounded):
+            self._use_circle(rounded)
+        else:
+            picked = selected_face()
+            if picked is not None:
+                self._use_wall(picked)
 
     # -- values ------------------------------------------------------------------
 
@@ -301,9 +334,27 @@ class MoveZeroDialog(QtWidgets.QDialog):
         self._preview()
 
     def _five_axes_toggled(self, on):
+        params().SetBool(_LAST_5_AXES, bool(on))
         self.turn_group.setVisible(on)
         self.adjustSize()
+        self._turn_out()
         self._preview()
+
+    def _z_out_toggled(self, on):
+        params().SetBool(_LAST_Z_OUT, bool(on))
+        self._turn_out()
+
+    def _turn_out(self):
+        """With 5 axes and "Z out of the model" ticked, Z turns out of the
+        wall or circle picked last, ticked before the pick or after it; the
+        window says what was picked."""
+        if self._picked is None:
+            return
+        turn, text, along = self._picked
+        if self.five_axes.isChecked() and self.z_out.isChecked():
+            self.set_turn(turn)
+        hint = not along and not self.five_axes.isChecked()
+        self.wall_label.setText(text + (". " + circle_zero.tilt_hint() if hint else ""))
 
     def _typed(self, *_args):
         if not self._filling:
@@ -320,6 +371,7 @@ class MoveZeroDialog(QtWidgets.QDialog):
     def _wall_toggled(self, on):
         if not on:
             return
+        self.circle_button.setChecked(False)
         picked = selected_face()
         if picked is not None:
             self._use_wall(picked)
@@ -328,34 +380,63 @@ class MoveZeroDialog(QtWidgets.QDialog):
 
     def selection_changed(self):
         """A click selected something: read it once FreeCAD is done with it."""
-        if self.wall_button.isChecked():
+        if self.wall_button.isChecked() or self.circle_button.isChecked():
             QtCore.QTimer.singleShot(_READ_MS, self._read_selection)
 
     def _read_selection(self):
-        if not self.wall_button.isChecked():
-            return
-        picked = selected_face()
-        if picked is not None:
-            self._use_wall(picked)
+        if self.wall_button.isChecked():
+            picked = selected_face()
+            if picked is not None:
+                self._use_wall(picked)
+        elif self.circle_button.isChecked():
+            picked = circle_zero.selected_round()
+            if picked is not None:
+                self._use_circle(picked)
 
     def _use_wall(self, picked):
         """Put the wall's plane through the zero point and, with 5 axes and
-        "Z out of the wall", turn its Z out of the wall; a face that is not
+        "Z out of the model", turn its Z out of the wall; a face that is not
         flat is refused and the button waits for another."""
         obj, sub = picked
-        turn = None
         try:
             shift = engine.wall_shift(self.job, obj, sub, self.shift())
-            if self.five_axes.isChecked() and self.z_out.isChecked():
-                turn = engine.wall_turn(self.job, obj, sub)
+            turn = engine.wall_turn(self.job, obj, sub)
         except (ProjectError, ValueError) as exc:
             self.wall_label.setText(tr(str(exc)))
             return False
-        if turn is not None:
-            self.set_turn(turn)
         self.set_shift(shift)
-        self.wall_label.setText(tr("{} of {}").format(sub, obj.Label))
+        self._picked = (turn, tr("{} of {}").format(sub, obj.Label), True)
+        self._turn_out()
         self.wall_button.setChecked(False)
+        FreeCADGui.Selection.clearSelection()
+        return True
+
+    # -- the circle --------------------------------------------------------------
+
+    def _circle_toggled(self, on):
+        if not on:
+            return
+        self.wall_button.setChecked(False)
+        picked = circle_zero.selected_round()
+        if picked is not None:
+            self._use_circle(picked)
+        else:
+            self.wall_label.setText(circle_zero.hint())
+
+    def _use_circle(self, picked):
+        """Put the zero point in the middle of the circle picked and, with 5
+        axes and "Z out of the model", turn its Z out of the part along the
+        circle's axis; an element that is not round is refused and the
+        button waits for another."""
+        try:
+            shift, turn, text, along = circle_zero.circle(self.job, picked)
+        except (ProjectError, ValueError) as exc:
+            self.wall_label.setText(tr(str(exc)))
+            return False
+        self.set_shift(shift)
+        self._picked = (turn, text, along)
+        self._turn_out()
+        self.circle_button.setChecked(False)
         FreeCADGui.Selection.clearSelection()
         return True
 

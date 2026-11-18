@@ -140,6 +140,33 @@ współrzędnych dla operacji. Dlatego:
   Joba (czyli w układzie mocowania), bez testu głębi, nieklikalne; znikają przy OK/Cancel.
   OK = `engine.move_zero.move` w jednej transakcji „Move 0-Point”. Brak przesunięcia i
   obrotu = bez kroku undo. Limit 10 m na oś (literówki).
+- **Select circle w oknie Move 0-Point** (2026-11-18, prośba usera na detalu testowym
+  Soraluce: głowica obrócona o 90° wierci otwory w czole i czyści duży otwór; osobne moduły
+  `model/engine/ui circle_zero.py`, `tests/test_circle_zero.py`,
+  `tests_gui/test_circle_zero.py`). Klik w okrągłą krawędź (cały okrąg albo łuk) albo w
+  ściankę walcową: zero do środka okręgu NA WYLOCIE otworu. Krawędź należąca do ścianki
+  walcowej o tym samym promieniu i osi oznacza całą ściankę (współosiowe ścianki tego
+  promienia, które się stykają — STEP dzieli walce na połówki). Wylot = koniec, za którym
+  (wzdłuż osi, aż do końca pudełka detalu) narzędzie o promieniu r − min(0,1; r/10) nie
+  trafia w detal (Boolean `common`); z dwóch wolnych końców ten, za którym mniej detalu
+  w pasie 2·r wokół osi (otwór Ø600 wchodzący do komory: za końcem Y−720 są ściany komory
+  aż do Y+1000); różnica ≤ średnica okręgu = remis → koniec kliknięty (krawędź), potem bliższy
+  punktowi kliknięcia (`PickedPoints` przeliczone z układu widoku, sprawdzone: błąd 0 mm).
+  Powód (zgłoszenie usera 2026-11-18): klik w głąb otworu łapał krawędź wewnętrznego końca
+  (Edge37, Y−720), stara próba materiału dawała Z w stronę komory i zero na Y−720.
+  Krawędź bez ścianki (stożek, płaski krąg): wolny kierunek osi; gdy oba albo żaden —
+  próba materiału wokół okręgu (6 punktów, ±0,01 mm, `Shape.isInside`; mniej materiału =
+  na zewnątrz). Brak wolnego końca (zamknięta pustka) → koniec kliknięty/bliższy + próba
+  materiału. Czas na detalu Soraluce ≤ 0,12 s na klik. Wszystkie trzy pola Move są
+  zastępowane. „5 axes” i „Z out of the model” ZAPAMIĘTYWANE (param `LastMoveZero5Axes`,
+  `LastMoveZeroZOut`, prośba usera); zaznaczenie ich już po kliknięciu ściany/okręgu od razu
+  daje obrót ostatniego kliknięcia (`_picked`, `_turn_out`). Bez 5 axes okno pisze, że oś
+  nie idzie wzdłuż Z. Krawędź albo ścianka walcowa zaznaczona przed otwarciem okna = od razu
+  okrąg; płaska ściana = jak dotąd ściana. Select wall i Select circle wzajemnie się
+  wyłączają. Sprawdzone na Detal_testowy_Soraluce.step: każda krawędź i ścianka otworów
+  Ø600 i Ø100 → wylot w czole Y−1000, Z = −Y (A+90) (druga strona Y+1000, A−90); otwory łap
+  Ø70 (przelotowe) → koniec kliknięty; z zera na czole otwory Ø100 i Ø600 rozpoznawane do
+  wiercenia.
 - **Zera operacji (EKSPERYMENTALNE, gałąź `experimental`, nie puszczone na maszynie)**
   (`model/op_zero.py`, `engine/op_zero.py`, `ui/op_zero.py`, `tests/test_op_zero.py`,
   `tests_gui/test_op_zero.py`). Decyzja usera (2026-11-16): operacja liczy od zera, na którym
@@ -169,7 +196,7 @@ współrzędnych dla operacji. Dlatego:
     `set_stock`). Set 0-Point as default pod innym kątem nie rusza bloku: stock zostaje przy
     swoim zerze, BLK FORM to pudełko opisane, a symulacja tnie sam blok (`_tilted_block`
     jako siatka startowa).
-  - **5 osi w oknie Move 0-Point**: pole „5 axes” odsłania „Z out of the wall” (Select wall
+  - **5 osi w oknie Move 0-Point**: pole „5 axes” odsłania „Z out of the model” (Select wall
     obraca Z na zewnątrz ściany najkrótszym obrotem, `turn_onto`: ściana +X = 90° wokół Y,
     jak SPB90 w programach warsztatu) i pola „Turn about X / Y / Z”. Kąty to kąty
     przestrzenne sterowania: A, B, C wokół nieruchomych X, Y, Z w tej kolejności, czyli

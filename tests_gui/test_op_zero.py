@@ -305,7 +305,7 @@ def step3():
     check(not part("Turn").isVisible(), "the turn is not shown without it")
     five.click()
     check(part("Turn").isVisible(), "ticked: the turn is shown")
-    check(part("ZOut").text() == "Z out of the wall" and part("ZOut").isChecked(), "Z out of the wall, ticked")
+    check(part("ZOut").text() == "Z out of the model" and part("ZOut").isChecked(), "Z out of the model, ticked")
     check(turn() == (0.0, 0.0, 0.0), "no turn at first: {}".format(turn()))
     part("TurnZ").setValue(30.0)
     QtWidgets.QApplication.processEvents()
@@ -406,7 +406,11 @@ def step7():
 
 @safe
 def step8():
-    check(not part("5X").isChecked(), "Move 0-Point again: 5 axes not ticked")
+    if edition.FIVE_AXES:
+        check(part("5X").isChecked(), "Move 0-Point again: 5 axes still ticked (kept for 5-axis work)")
+    else:
+        check(not part("5X").isChecked(), "Move 0-Point again: without 5 axes in this version not ticked, remembered or not")  # fmt: skip
+    check(tuple(window().turn()) == (0.0, 0.0, 0.0), "no turn before a pick: {}".format(window().turn()))
     part("X").setProperty("rawValue", 5.0)
     window().accept()
     later(800, step9)

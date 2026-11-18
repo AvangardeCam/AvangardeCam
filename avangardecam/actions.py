@@ -171,7 +171,7 @@ TABS = (
                         _t("Move 0-Point"),
                         "AvangardeCam_MoveZero",
                         LARGE,
-                        _t("Move the zero point onto a wall of the part (Select wall) or by a distance along X, Y and Z; with 5 axes also turn it. The operations keep the zero point they were made on"),  # fmt: skip
+                        _t("Move the zero point onto a wall of the part (Select wall), into the middle of a circle (Select circle) or by a distance along X, Y and Z; with 5 axes also turn it. The operations keep the zero point they were made on"),  # fmt: skip
                         "move_zero",
                     ),
                     Action(
