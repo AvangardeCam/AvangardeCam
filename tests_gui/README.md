@@ -205,6 +205,10 @@ cat /tmp/ac.txt
   button says which: 1 of 9 and goes there), played from the start it stops at the first. Closing the
   document closes it too.
 
+- `test_dark_system.py`: FreeCAD's light theme (its profile seeded from `test_dark_system.user.cfg`)
+  under a dark system palette (Pop dark: FreeCAD from Flatpak takes it): the details under the project
+  list on the dock's light background with readable text, their captions and the ribbon's group titles
+  grey (#808080), not the system's mid colour.
 - `test_next_setup.py`: CAM > Next setup opens its window (Stock from the last setup checked at first,
   Medium, where the zero point goes; Standard has no accuracy; Custom without a file refused, the window
   stays; Cancel makes nothing); a contour in Setup 1, then Next setup from Setup 1 at Rough (remembered):
@@ -235,5 +239,8 @@ AC_TEST_OUT=$OUT AC_STEP=/path/to/model.step FREECAD_USER_HOME=$OUT/home DISPLAY
     FreeCAD tests_gui/test_project.py
 cat $OUT/test_project.txt   # log; screenshots are saved next to it
 ```
+
+A test with its own preferences has `tests_gui/<test>.user.cfg` next to it: copy it into the
+empty profile first (`cp tests_gui/test_dark_system.user.cfg $OUT/home/user.cfg`).
 
 After changing Python files restart FreeCAD.

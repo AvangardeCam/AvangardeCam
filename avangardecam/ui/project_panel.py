@@ -38,6 +38,11 @@ TOOL = "tool"
 OPERATION = "operation"
 PLACEHOLDER = "placeholder"
 
+# Captions and notes in the details: a grey that reads on a light and on a dark
+# background. palette(mid) followed the system: with a dark system theme
+# (user 2026-11-18, Pop dark) it was dark on FreeCAD Light's light panel.
+DIM = "#808080"
+
 # group keys; the groups of a setup are keyed "<key>:<Job name>"
 GROUPS = (
     (
@@ -140,6 +145,8 @@ class ProjectPanel(QtWidgets.QWidget):
         self.delete_key = delete_operation.install(self.tree, self._operation_of_item, self)
 
         self.scroll = QtWidgets.QScrollArea(splitter)
+        self.scroll.setObjectName("AvangardeCamDetailsScroll")
+        self.scroll.viewport().setObjectName("AvangardeCamDetailsViewport")
         self.scroll.setWidgetResizable(True)
         self.scroll.setFrameShape(QtWidgets.QFrame.NoFrame)
 
@@ -152,10 +159,13 @@ class ProjectPanel(QtWidgets.QWidget):
 
         self.setStyleSheet(
             """
-            #AvangardeCamDetailsCaption { color: palette(mid); font-size: 8pt; }
+            #AvangardeCamDetailsViewport,
+            #AvangardeCamDetailsViewport > QWidget { background: transparent; }
+            #AvangardeCamDetailsCaption { color: %s; font-size: 8pt; }
             #AvangardeCamDetailsTitle { font-weight: bold; font-size: 11pt; }
-            #AvangardeCamDetailsNote { color: palette(mid); }
+            #AvangardeCamDetailsNote { color: %s; }
             """
+            % (DIM, DIM)
         )
         self.refresh()
 

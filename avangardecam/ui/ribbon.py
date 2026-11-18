@@ -196,7 +196,7 @@ class RibbonBar(QtWidgets.QWidget):
 
         self.setStyleSheet(
             """
-            #AvangardeCamGroupTitle { color: palette(mid); font-size: 8pt; }
+            #AvangardeCamGroupTitle { color: #808080; font-size: 8pt; }  /* palette(mid) followed the system theme: unreadable on a light or a dark system */
             #AvangardeCamFileButton {
                 background-color: #2a6cb3; color: white; font-weight: bold;
                 border: none; padding: 3px 16px; margin-right: 4px;
