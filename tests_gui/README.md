@@ -136,9 +136,19 @@ cat /tmp/ac.txt
   point, the stock and the view follow, the details and the status bar say it, Undo names the
   step and takes it back; a face selected before the click on the ribbon is taken at once;
   Cancel and OK without a shift change nothing and make no undo step; one window at a time.
+- `test_circle_zero.py` (experimental): a tube along Y, hollow inside, with a bore into the
+  hollow and four holes in its end (made as a STEP by the test); Move 0-Point > Select circle
+  and a real click on the bore's round edge: the shift to its middle, without 5 axes no turn
+  and a word that the axis is not along Z; 5 axes ticked after the pick turns Z out of the end
+  then; a flat face refused, the button still waiting; Select wall and Select circle not
+  pressed together; a real click deep in the bore (its wall) and its far edge where it opens
+  into the hollow still give its mouth on the end, Z out of the tube; OK: the zero point there,
+  the tool out of the end, one undo step, the status bar; the holes in the end can be drilled
+  from it; the next window keeps 5 axes ticked and takes a hole's wall selected before it opens
+  at once (its mouth); 5 axes unticked is kept too; Cancel; Undo takes it back.
 - `test_op_zero.py` (experimental): the same block with a contour on its top; Set 0-Point as
   default and Reset 0-Point beside Move 0-Point; Move 0-Point with "5 axes" and "Z out of the
-  wall": a click on the right wall gives the shift and 90° about Y; after OK the tool axis is
+  model": a click on the right wall gives the shift and 90° about Y; after OK the tool axis is
   the wall's, the contour made before keeps its zero point (marked "other 0-Point", drawn on
   its own zero point, its details say where it counts from), the stock is the same block; a
   contour on the wall counts from the new zero point; "Make 0-Point active" in the menu of

@@ -72,15 +72,23 @@ of the scene), so FreeCAD's NaviCube and the Top/Front views are the machine's v
 ### Zero points of operations (experimental)
 
 A setup has a **default zero point** (the machine's preset) and an **active** one, which Move
-0-Point moves away from it (onto a wall, by a typed shift; with 5 axes it turns). **Each
-operation counts from the zero point it was made on and keeps it.** FreeCAD computes a Job
-on one zero point, so `engine/op_zero.py` works on one at a time: the operations of another
+0-Point moves away from it (onto a wall, into the middle of a circle, by a typed shift; with 5
+axes it turns). **Each operation counts from the zero point it was made on and keeps it.**
+FreeCAD computes a Job on one zero point, so `engine/op_zero.py` works on one at a time: the operations of another
 zero point are *parked* (their zero point in `AvangardeZero`, their path kept; a guard on
 FreeCAD's `ObjectOp.execute` keeps FreeCAD from computing them on the wrong zero point) and
 come alive when their zero point is made the active one (`activate`: Make 0-Point active,
 Reset 0-Point, or editing them). A setup whose zero point was never moved away has none of
 this and works as before. Snap-0-Point and Rotate 0-Point move the setup itself (its default
 zero point with what counts from it) and start from the default.
+
+Select circle in the Move 0-Point window is its own module (`model/engine/ui circle_zero.py`):
+a round edge stands for the wall of the hole or pin it bounds (the coaxial cylinder faces of
+its radius that meet), and the zero point goes to the wall's mouth: the end beyond which a
+tool a little thinner than the circle meets nothing of the part (a Boolean common), of two
+such ends the one with less of the part around its way out (within twice the radius of the
+axis), when alike within the circle's diameter the one clicked. "Z out of the model" turns Z
+that way. With no free end the material just around the circle decides.
 
 The **stock has a zero point of its own**: the one its block is a box on (the default zero
 point it was made on; kept in `AvangardeStockZero`, the block in `AvangardeBlock`). On another
