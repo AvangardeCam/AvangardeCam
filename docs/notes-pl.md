@@ -2083,3 +2083,13 @@ R2, R5). W jednym programie i tak używa się tylko jednego wariantu.
   `avangardecam.forget_last_values()`, więc wynik nie zależy od profilu. Nowa
   zapamiętywana wartość też musi mieć nazwę `Last…`.
 - Testowy model: `demo_bridge.step`.
+
+## Ciemny motyw systemu pod jasnym motywem FreeCADa (2026-11-18)
+
+FreeCAD z Flatpaka bierze paletę z systemu (Pop dark, `prefer-dark`), a motyw „FreeCAD Light”
+przemalowuje tylko widżety, które zna. Panel Details pod listą projektu (QScrollArea) malował
+viewport i widok tłem z palety, czyli ciemnym, a tekst miał czarny z motywu. Podpisy w Details
+i podpisy grup na wstążce miały `palette(mid)`: ciemny na ciemnym systemie, prawie biały na jasnym.
+Teraz viewport i widok Details są przezroczyste (tło doku jak lista), a podpisy mają stały szary
+#808080, czytelny na jasnym i ciemnym tle. Test: `tests_gui/test_dark_system.py` (profil z
+`test_dark_system.user.cfg`, ciemna paleta Qt podana w teście).

@@ -251,6 +251,10 @@ cat /tmp/ac.txt
   itself (not its box), a STEP blank as the stock; a blank drawn over the part stays there; a right
   click on the stock: Move stock... (X+5 Z-2, the message that the model sticks out 3 mm at X−, one
   undo step), a box's menu without Move stock.
+- `test_dark_system.py`: FreeCAD's light theme (its profile seeded from `test_dark_system.user.cfg`)
+  under a dark system palette (Pop dark: FreeCAD from Flatpak takes it): the details under the project
+  list on the dock's light background with readable text, their captions and the ribbon's group titles
+  grey (#808080), not the system's mid colour.
 - `test_exact_stock.py`: a part with round tops of R 515 on a base 2400 long, imported from STEP: the
   stock with allowances 1 mm (then 3 mm typed) over the arcs' top, from the exact faces, also where
   FreeCAD's box of the drawn part is under it (`AC_EXACT_STEP`: a part of one's own, top at Z 515).
@@ -284,5 +288,8 @@ AC_TEST_OUT=$OUT AC_STEP=/path/to/model.step FREECAD_USER_HOME=$OUT/home DISPLAY
     FreeCAD tests_gui/test_project.py
 cat $OUT/test_project.txt   # log; screenshots are saved next to it
 ```
+
+A test with its own preferences has `tests_gui/<test>.user.cfg` next to it: copy it into the
+empty profile first (`cp tests_gui/test_dark_system.user.cfg $OUT/home/user.cfg`).
 
 After changing Python files restart FreeCAD.
