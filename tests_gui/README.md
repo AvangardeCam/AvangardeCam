@@ -14,7 +14,8 @@ cat /tmp/ac.txt
 
 ## GUI tests
 
-- `test_layout.py`: stage 1, the layout, no placeholder shown (nor an empty group), Extract boundary edges also on the CAM tab, File menu, expert mode and back.
+- `test_layout.py`: stage 1, the layout, no placeholder shown (nor an empty group), Extract boundary edges also on the CAM tab, the large buttons'
+  labels on two lines and none cut short at 1920 px, File menu, expert mode and back.
 - `test_project.py`: stage 2, STEP import creating the job, stock allowances with undo,
   tools from the shop's library (Ø beside the name; a click on the T or Ø header sorts
   smallest first, again largest first, also with a filter), selection list <-> 3D, save and reopen.
@@ -208,7 +209,8 @@ cat /tmp/ac.txt
 - `test_dark_system.py`: FreeCAD's light theme (its profile seeded from `test_dark_system.user.cfg`)
   under a dark system palette (Pop dark: FreeCAD from Flatpak takes it): the details under the project
   list on the dock's light background with readable text, their captions and the ribbon's group titles
-  grey (#808080), not the system's mid colour.
+  grey (#808080), not the system's mid colour; the active ribbon tab light (the profile has FreeCAD Light's
+  light 3D background: the theme takes the active tab's colour from it).
 - `test_next_setup.py`: CAM > Next setup opens its window (Stock from the last setup checked at first,
   Medium, where the zero point goes; Standard has no accuracy; Custom without a file refused, the window
   stays; Cancel makes nothing); a contour in Setup 1, then Next setup from Setup 1 at Rough (remembered):

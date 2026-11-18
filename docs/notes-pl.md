@@ -1905,3 +1905,17 @@ i podpisy grup na wstążce miały `palette(mid)`: ciemny na ciemnym systemie, p
 Teraz viewport i widok Details są przezroczyste (tło doku jak lista), a podpisy mają stały szary
 #808080, czytelny na jasnym i ciemnym tle. Test: `tests_gui/test_dark_system.py` (profil z
 `test_dark_system.user.cfg`, ciemna paleta Qt podana w teście).
+
+Czarna aktywna zakładka (CAD/CAM i zakładka dokumentu) na zrzutach z testowego profilu to nie błąd
+programu: motyw „FreeCAD Light” bierze kolor aktywnej zakładki z koloru tła widoku 3D
+(`@ActiveTabBackgroundColor` = `@3DViewBackgroundRefColor` = `@BackgroundColor`, czyli
+`View/BackgroundColor`). Profil bez tego parametru daje czarny; prawdziwy profil FreeCAD Light ma
+jasny (#F7F7F7). Dlatego `test_dark_system.user.cfg` ma też grupę `View` z tym kolorem.
+
+## Podpisy dużych przycisków wstążki w dwóch linijkach (2026-11-18)
+
+Zakładka CAM w jednej linijce potrzebowała 2191 px, ekran 1920 ma 1912: Qt ściskał duże przyciski
+i ucinał podpisy („Nex…tup”, „Snap…oint”, „Ex…NC”). Teraz podpis dużego przycisku jest w dwóch
+linijkach jak we wstążce Office (`ribbon.two_lines`): łamany na spacji, która daje najkrótszą dłuższą
+linijkę; jedno słowo dostaje pustą drugą linijkę, żeby podpisy stały równo. CAM potrzebuje 1876 px.
+Test: `test_layout.py` (żaden przycisk węższy niż jego podpis przy 1920 px).

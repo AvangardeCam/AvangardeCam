@@ -167,6 +167,11 @@ def step4():
 
 @safe
 def step5():
+    page = layout().ribbon.tabs.currentWidget().widget()
+    cut = [b.objectName() for b in page.findChildren(QtWidgets.QToolButton) if b.width() < b.sizeHint().width()]
+    check(not cut, "no CAM button narrower than its label at 1920 px (no 'Nex...tup'): {}".format(cut))
+    extract = layout().ribbon.findChild(QtWidgets.QToolButton, "AvangardeCam_cam_extract_boundary")
+    check(extract.text() == "Extract\nboundary edges", "a large button's label on two lines: " + repr(extract.text()))
     shot("04_cam_tab")
     button = layout().ribbon.file_button
     button.menu().popup(button.mapToGlobal(QtCore.QPoint(0, button.height())))
