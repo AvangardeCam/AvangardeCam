@@ -16,6 +16,19 @@ LARGE_ICON = 32
 SMALL_ICON = 16
 
 
+def two_lines(text):
+    """The text of a large button on two lines, broken at the space that makes
+    the longer line shortest ("Measure from" / "0-Point"); one word gets an
+    empty second line, so all the labels stand alike under their icons. On one
+    line the CAM tab is wider than a 1920 px screen and Qt cut the labels short
+    ("Nex...tup")."""
+    spaces = [i for i, c in enumerate(text) if c == " "]
+    if not spaces:
+        return text + "\n"
+    i = min(spaces, key=lambda i: max(i, len(text) - i - 1))
+    return text[:i] + "\n" + text[i + 1 :]
+
+
 class ActionButton(QtWidgets.QToolButton):
     def __init__(self, action, parent=None):
         super().__init__(parent)
@@ -26,6 +39,7 @@ class ActionButton(QtWidgets.QToolButton):
         self.setToolTip(tr(action.tip or action.text))
         self.setIcon(icons.get(action.icon))
         if action.size == actions.LARGE:
+            self.setText(two_lines(tr(action.text)))
             self.setToolButtonStyle(QtCore.Qt.ToolButtonTextUnderIcon)
             self.setIconSize(QtCore.QSize(LARGE_ICON, LARGE_ICON))
             self.setMinimumWidth(56)

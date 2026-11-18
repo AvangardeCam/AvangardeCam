@@ -14,7 +14,8 @@ cat /tmp/ac.txt
 
 ## GUI tests
 
-- `test_layout.py`: stage 1, the layout, no placeholder shown (nor an empty group), Extract boundary edges also on the CAM tab, File menu, expert mode and back.
+- `test_layout.py`: stage 1, the layout, no placeholder shown (nor an empty group), Extract boundary edges also on the CAM tab, the large buttons'
+  labels on two lines and none cut short at 1920 px, File menu, expert mode and back.
 - `test_project.py`: stage 2, STEP import creating the job, stock allowances with undo,
   tools from the shop's library (Ø beside the name; a click on the T or Ø header sorts
   smallest first, again largest first, also with a filter), selection list <-> 3D, save and reopen.
@@ -254,7 +255,8 @@ cat /tmp/ac.txt
 - `test_dark_system.py`: FreeCAD's light theme (its profile seeded from `test_dark_system.user.cfg`)
   under a dark system palette (Pop dark: FreeCAD from Flatpak takes it): the details under the project
   list on the dock's light background with readable text, their captions and the ribbon's group titles
-  grey (#808080), not the system's mid colour.
+  grey (#808080), not the system's mid colour; the active ribbon tab light (the profile has FreeCAD Light's
+  light 3D background: the theme takes the active tab's colour from it).
 - `test_exact_stock.py`: a part with round tops of R 515 on a base 2400 long, imported from STEP: the
   stock with allowances 1 mm (then 3 mm typed) over the arcs' top, from the exact faces, also where
   FreeCAD's box of the drawn part is under it (`AC_EXACT_STEP`: a part of one's own, top at Z 515).
