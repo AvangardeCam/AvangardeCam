@@ -16,6 +16,7 @@ from PySide import QtCore, QtGui, QtWidgets
 
 from avangardecam import tr
 from avangardecam.model import cutting_data as model
+from avangardecam.ui import number_entry
 
 # (field, label, unit, highest, decimals)
 _FIELDS = (
@@ -52,6 +53,7 @@ class CuttingDataFields(QtWidgets.QWidget):
             box.setSuffix(" " + unit)
             box.setSpecialValueText(tr("none"))  # 0: the tool has none and none is typed
             box.setKeyboardTracking(False)
+            number_entry.install(box)
             box.setToolTip(tr("Filled from the tool; a changed value is this operation's own (bold)."))
             box.valueChanged.connect(self._edited)
             grid.addWidget(title, row, 0)

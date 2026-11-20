@@ -40,6 +40,8 @@ two counterbores for screw heads and four M6 holes, machined in two clampings.
 
 Every operation window has a **Manual** button with the full description of how that operation works.
 
+**Typing numbers:** a click in a number box puts the cursor in the number, never behind its unit (mm, °, rpm): change one digit at once. A double click selects the whole number, so what you type replaces it. A box that shows **none** or **-** is selected at a click.
+
 **View navigation (Blender style):** middle button rotates, Shift+middle pans, Ctrl+middle zooms.
 
 ---

@@ -2166,3 +2166,10 @@ Test: `test_layout.py` (żaden przycisk węższy niż jego podpis przy 1920 px).
   a wartość niezmieniona zostaje dokładnie jak była (nie zaokrąglona przez pole).
 - README i instrukcja: bibliotekę ze starego programu prawdopodobnie łatwo przerobić na JSON
   AvangardeCam asystentem AI (np. Claude Code), potem Open other library...
+- Wpisywanie liczb (`ui/number_entry.py`, podpinane `install(box)` tam, gdzie pole powstaje:
+  `details.length_box` i spin boxy okien). Kliknięcie za liczbą (na jednostce albo pustej części
+  pola) stawiało kursor za „mm”: Backspace kasował jednostkę („25.00 mm8”), a w spin boxie Qt
+  klawisze były odrzucane. Teraz kursor staje na końcu liczby; podwójne kliknięcie zaznacza całą
+  liczbę ze znakiem, bez jednostki (Qt zaznaczał tylko słowo, np. samą kropkę); pole z „none”
+  albo „-” zaznacza się po kliknięciu (wcześniej nie dało się nic wpisać). Test
+  `tests_gui/test_number_entry.py`; ten sam test bez poprawki: 18 FAIL.

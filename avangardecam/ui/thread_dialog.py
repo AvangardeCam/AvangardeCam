@@ -28,7 +28,7 @@ from PySide.QtCore import QT_TRANSLATE_NOOP
 from avangardecam import params, tr
 from avangardecam.model import operations as model_operations
 from avangardecam.model import threads as model_threads
-from avangardecam.ui import details, manual, window_fit
+from avangardecam.ui import details, manual, number_entry, window_fit
 from avangardecam.ui.tool_choice import ToolChooser, library_id
 
 DEFAULT_DEPTH_MM = -10.0
@@ -174,6 +174,7 @@ class ThreadFields(QtCore.QObject):
         self.passes.setObjectName("AvangardeCamThreadPasses")
         self.passes.setRange(1, model_operations.MAX_PASSES)
         self.passes.setValue(thread.passes)
+        number_entry.install(self.passes)
         self.passes.setToolTip(tr("How many times the tool runs the same helix"))
         self.passes.valueChanged.connect(lambda *_args: self.typed.emit())
         form.addRow(tr("Passes") + ":", self.passes)

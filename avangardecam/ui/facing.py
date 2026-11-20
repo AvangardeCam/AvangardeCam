@@ -30,7 +30,7 @@ from avangardecam.engine import facing as engine_facing
 from avangardecam.engine import freecad_cam as cam
 from avangardecam.model import facing as model_facing
 from avangardecam.model import operations as model_operations
-from avangardecam.ui import details, field_pictures, manual, window_fit
+from avangardecam.ui import details, field_pictures, manual, number_entry, window_fit
 from avangardecam.ui.tool_choice import ToolChooser, library_id
 
 _LAST_FACING = "LastFacing"  # the values but Start Z, as JSON
@@ -185,6 +185,7 @@ class FacingFields(QtCore.QObject):
         self.step_over.setDecimals(1)
         self.step_over.setSuffix(" %")
         self.step_over.setValue(facing.step_over_percent)
+        number_entry.install(self.step_over)
         self.step_over.setToolTip(tr("The most of the tool's diameter between passes; the passes are spread evenly"))
         self.step_over.valueChanged.connect(emit)
         self.step_over_mm = QtWidgets.QLabel()

@@ -29,7 +29,7 @@ from avangardecam.engine import slot as engine_slot
 from avangardecam.model import nc
 from avangardecam.model import operations as model_operations
 from avangardecam.model import slot as model_slot
-from avangardecam.ui import details, manual, window_fit
+from avangardecam.ui import details, manual, number_entry, window_fit
 from avangardecam.ui.tool_choice import ToolChooser, library_id
 
 _LAST_SLOT = "LastSlotMilling"  # the values but the depth, as JSON
@@ -181,6 +181,7 @@ class SlotFields(QtCore.QObject):
         self.step_over.setDecimals(1)
         self.step_over.setSuffix(" %")
         self.step_over.setValue(milling.step_over_percent)
+        number_entry.install(self.step_over)
         self.step_over.setToolTip(tr("The most of the tool's diameter a rough pass grows by; the passes are spread evenly"))  # fmt: skip
         self.step_over.valueChanged.connect(emit)
         self.step_over_mm = QtWidgets.QLabel()
@@ -218,6 +219,7 @@ class SlotFields(QtCore.QObject):
         self.ramp.setDecimals(1)
         self.ramp.setSuffix(" °")
         self.ramp.setValue(milling.ramp_angle_deg)
+        number_entry.install(self.ramp)
         self.ramp.setToolTip(tr("The steepest the tool goes down along the slot"))
         self.ramp.valueChanged.connect(emit)
         self.ramp_kind = QtWidgets.QComboBox()

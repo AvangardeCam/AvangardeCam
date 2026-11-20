@@ -42,6 +42,8 @@ Nazwy przycisków i pól są takie jak w programie (po angielsku).
 
 Każde okno operacji ma przycisk **Manual**, który pokazuje dokładny opis działania tej operacji.
 
+**Wpisywanie liczb:** kliknięcie w pole liczbowe stawia kursor w liczbie, nigdy za jednostką (mm, °, rpm): od razu zmieniasz jedną cyfrę. Podwójne kliknięcie zaznacza całą liczbę, więc to, co wpiszesz, ją zastępuje. Pole z **none** albo **-** zaznacza się po kliknięciu.
+
 **Obsługa widoku (jak w Blenderze):** środkowy przycisk obraca widok, Shift+środkowy przesuwa, Ctrl+środkowy przybliża.
 
 ---

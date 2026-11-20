@@ -32,7 +32,7 @@ from avangardecam.engine import helix as engine_helix
 from avangardecam.model import helix as model_helix
 from avangardecam.model import nc
 from avangardecam.model import operations as model_operations
-from avangardecam.ui import details, manual, window_fit
+from avangardecam.ui import details, manual, number_entry, window_fit
 from avangardecam.ui.tool_choice import ToolChooser, library_id
 
 DEFAULT_DEPTH_MM = -10.0  # of a sketch's circles, the first time
@@ -77,7 +77,7 @@ def _mm_box(value, decimals, minimum, maximum):
     box.setRange(minimum, maximum)
     box.setSuffix(" mm")
     box.setValue(value)
-    return box
+    return number_entry.install(box)
 
 
 def _value(box):
@@ -212,6 +212,7 @@ class HelixFields(QtCore.QObject):
         self.step_over.setDecimals(1)
         self.step_over.setSuffix(" %")
         self.step_over.setValue(milling.step_over_percent)
+        number_entry.install(self.step_over)
         self.step_over.setToolTip(tr("The most of the tool's diameter a pass widens the hole by; the passes are spread evenly"))  # fmt: skip
         self.step_over.valueChanged.connect(emit)
         self.step_over_mm = QtWidgets.QLabel()
