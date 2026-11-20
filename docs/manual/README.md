@@ -158,6 +158,16 @@ Facing takes the allowance off the top of the whole stock, down to the top face 
 - **Switch off:** right click → **Switch off**. The operation stays in the list but is left out of the program and the simulation.
 - **Delete:** right click → Delete.
 
+### Spindle speed and feeds
+
+Under the tool, every operation window has **Spindle speed**, **Feed XY** and **Feed Z** (a drilling: **Feed Q206** down into the hole and **Feed Q253** to the start). They are filled from the chosen tool and can be changed for this operation only:
+
+- A changed value is **bold** and marked *(own)*. **From tool** puts the tool's values back. Another tool fills in its own values.
+- **Vc** (cutting speed, m/min) and **fz** (feed per tooth, mm) are worked out beside them, to check the values.
+- The tool keeps its own values; other operations with it do not change. The values you did not change still follow the tool.
+- The program, Simulate, Verify and the cycle time run the operation with its own values. The same tool with another spindle speed is called again with a whole `TOOL CALL`.
+- **Change tool...** gives the operation the new tool's values. Details shows the values after the tool (*(own)* beside a changed one).
+
 ---
 
 ## 6. Simulation — Simulate

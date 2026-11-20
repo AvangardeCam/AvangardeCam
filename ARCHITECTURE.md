@@ -105,6 +105,18 @@ turned into the preset's coordinates, where the stock and the part are, with the
 that zero point. `post/machines.py` says which machine's program is run: the one chosen for
 the export, or one that tilts when an operation is on a turned zero point.
 
+### Cutting data of an operation
+
+The spindle speed and feeds come from the tool (the tool controller, shared by the operations
+with that tool); an operation may keep its own (`engine/cutting_data.py`: `AvangardeSpindle`,
+`AvangardeFeedXY`, `AvangardeFeedZ`, 0 = the tool's). The paths are made with the tool's
+values; `freecad_cam.nc_operation` puts the own ones on the NC operation
+(`model/cutting_data.py`: the tool, the moves' feeds, a drilling cycle's Q206/Q253), so the
+program, Simulate, Verify and the cycle time all run with them. The same tool with another
+spindle speed is a tool call (`post/heidenhain._calls`, `model/machine.py`). The fields are in
+`ui/cutting_data.py`, under the tool of `ui/tool_choice.ToolChooser`; the handlers keep them on
+OK (`handlers._keep_cutting_data`), Change tool drops them.
+
 ## Simulation and checking
 
 - `stocklab/`: material removal on a tri-dexel grid (numpy, no FreeCAD), used by **Play**

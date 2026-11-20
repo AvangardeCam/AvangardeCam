@@ -637,7 +637,35 @@ def tool_row_text(op, job):
     tool = next((t for t in cam.project_tools(job) if t.controller is tc), None) if job else None
     if tool is None:
         return tc.Label if tc is not None else NONE
-    return tool_text(tool)
+    return tool_text(tool) + cutting_text(op)
+
+
+def cutting_tool(op):
+    """The model Tool an operation runs with: its tool's with its own
+    spindle speed and feeds (engine.cutting_data); None without a tool."""
+    from avangardecam.engine import cutting_data
+
+    return cutting_data.tool(op)
+
+
+def cutting_text(op):
+    """"\nS 2500 rpm (own), XY 400 (own), Z 150 mm/min" of an operation's
+    spindle speed and feeds (engine.cutting_data), "" without them."""
+    from avangardecam.engine import cutting_data
+
+    tool, own = cutting_data.tool(op), cutting_data.own(op)
+    if tool is None or not (tool.spindle_rpm or tool.feed_xy_mm_min or tool.feed_z_mm_min):
+        return ""
+
+    def value(field, text):
+        number = getattr(tool, field)
+        if not number:
+            return text.format("-")
+        return text.format("{:g}".format(number)) + (" " + tr("(own)") if getattr(own, field) is not None else "")
+
+    return "\n" + ", ".join(
+        (value("spindle_rpm", "S {} rpm"), value("feed_xy_mm_min", "XY {}"), value("feed_z_mm_min", "Z {} mm/min"))
+    )
 
 
 class DrillingView(DetailsView):
@@ -718,7 +746,7 @@ class DrillingView(DetailsView):
         tc = self.op.ToolController
         tool = next((t.tool for t in cam.project_tools(self.job) if t.controller is tc), None)
         self.tool_label.setText(tool_row_text(self.op, self.job))
-        self.feeds_label.setText(drilling_dialog.feeds_text(tool))
+        self.feeds_label.setText(drilling_dialog.feeds_text(cutting_tool(self.op)))
         top, tip = cam.contour_depths(self.op)
         try:
             targets = cam.drill_targets(self.op)
@@ -822,7 +850,7 @@ class ThreadMillingView(DetailsView):
         tc = self.op.ToolController
         tool = next((t.tool for t in cam.project_tools(self.job) if t.controller is tc), None)
         self.tool_label.setText(tool_row_text(self.op, self.job))
-        self.feeds_label.setText(thread_dialog.feeds_text(tool))
+        self.feeds_label.setText(thread_dialog.feeds_text(cutting_tool(self.op)))
         top, bottom = cam.contour_depths(self.op)
         try:
             targets = cam.drill_targets(self.op)
@@ -938,7 +966,7 @@ class AdaptiveView(DetailsView):
         tc = self.op.ToolController
         tool = next((t.tool for t in cam.project_tools(self.job) if t.controller is tc), None)
         self.tool_label.setText(tool_row_text(self.op, self.job))
-        self.feeds_label.setText(adaptive_dialog.feeds_text(tool))
+        self.feeds_label.setText(adaptive_dialog.feeds_text(cutting_tool(self.op)))
         self.fields.show_step_over(tool)
         moves, lowest = cam.path_summary(self.op)
         if moves and lowest is not None:

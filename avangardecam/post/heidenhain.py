@@ -140,6 +140,14 @@ def cycle_7(origin):
     ]
 
 
+def _calls(last, tool):
+    """Whether an operation with tool calls it after one with last: another
+    tool, or the same with another spindle speed (an operation's own,
+    model.cutting_data; a whole TOOL CALL with its number, as the shop
+    wants it)."""
+    return last.number != tool.number or abs(last.spindle_rpm - tool.spindle_rpm) >= 0.01
+
+
 class _Writer:
     def __init__(self, program, machine):
         self.program = program
@@ -239,16 +247,19 @@ class _Writer:
         return "".join(lines)
 
     def _tool_order(self):
-        """Tool numbers in the order they are called."""
+        """Tool numbers in the order they are called: a tool is called
+        again (the same number) for another spindle speed."""
         order = []
+        last = None
         for op in self.program.operations():
-            if not order or order[-1] != op.tool.number:
+            if last is None or _calls(last, op.tool):
                 order.append(op.tool.number)
+            last = op.tool
         return order
 
     def _operation(self, op, order):
         tool = op.tool
-        change = self.tool is None or self.tool.number != tool.number
+        change = self.tool is None or _calls(self.tool, tool)
         if change and self.tool is not None:
             self._datum(None, lift=False)
             self._from("change")
@@ -258,7 +269,8 @@ class _Writer:
         self.add("*- " + _TITLES.get(op.kind, op.label))
         if change:
             called = len([b for b in self.blocks if b.startswith("TOOL CALL ")])
-            following = order[called + 1] if called + 1 < len(order) else order[0]
+            later = [n for n in order[called + 1 :] if n != tool.number]
+            following = later[0] if later else order[0]
             self._from("call")
             if op.kind == nc.DRILLING:  # the shop's programs call a drill so
                 self.add(

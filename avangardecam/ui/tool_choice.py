@@ -10,6 +10,10 @@ that kind of operation; with none, with the setup's first tool that suits
 it, else the user chooses: variants differ in speeds and feeds, so the
 program does not pick one from the library by itself.
 
+Under the tool: its spindle speed and feeds, changeable for this
+operation (ui.cutting_data; own() of them, cutting_changed when one
+changes).
+
 An operation may show only its kind of tools (only=(label, suits), e.g.
 Drills only for a drilling): a check box, on at the start, hides the others
 in the list and in Choose tool...; off, everything is shown. A chosen tool
@@ -20,6 +24,7 @@ from PySide import QtCore, QtWidgets
 
 from avangardecam import tr
 from avangardecam.engine import freecad_cam as cam
+from avangardecam.ui.cutting_data import CuttingDataFields
 
 
 def tool_text(choice):
@@ -46,6 +51,7 @@ class ToolChooser(QtWidgets.QWidget):
     tools that suit."""
 
     changed = QtCore.Signal()
+    cutting_changed = QtCore.Signal()  # a spindle speed or feed changed (also with another tool)
 
     def __init__(self, job, prefix, parent=None, only=None):
         super().__init__(parent)
@@ -80,6 +86,9 @@ class ToolChooser(QtWidgets.QWidget):
         self.hint.setObjectName(prefix + "ToolHint")
         self.hint.setWordWrap(True)
         box.addWidget(self.hint)
+        self.cutting = CuttingDataFields(prefix)
+        self.cutting.changed.connect(self.cutting_changed)
+        box.addWidget(self.cutting)
         for tool in self.tools:
             self._add_choice(tool)
         self.box.setCurrentIndex(-1)
@@ -167,8 +176,19 @@ class ToolChooser(QtWidgets.QWidget):
         if picker.exec() and picker.picked is not None:
             self.use(picker.picked)
 
+    def cutting_tool(self):
+        """The chosen tool's model Tool with the spindle speed and feeds of
+        the fields, or None."""
+        return self.cutting.cutting_tool()
+
+    def follow(self, label, text):
+        """label shows text(cutting_tool()) as the tool and its values change."""
+        self.cutting_changed.connect(lambda: label.setText(text(self.cutting_tool())))
+        label.setText(text(self.cutting_tool()))
+
     def _changed(self, *_args):
         choice = self.tool()
+        self.cutting.set_tool(choice.tool if choice is not None else None)
         if choice is None:
             self.hint.setText(tr("Choose one of the setup's tools or one from the tool library."))
         elif isinstance(choice, cam.ProjectTool):

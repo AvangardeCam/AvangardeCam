@@ -161,6 +161,16 @@ Facing zdejmuje naddatek z góry całego stocku, aż do górnej ściany modelu.
 - **Wyłączanie:** prawy klik → **Switch off**. Operacja zostaje na liście, ale nie trafia do programu ani do symulacji.
 - **Usuwanie:** prawy klik → Delete.
 
+### Obroty i posuwy
+
+Każde okno operacji ma pod narzędziem pola **Spindle speed**, **Feed XY** i **Feed Z** (wiercenie: **Feed Q206** w dół w otwór i **Feed Q253** do punktu startu). Wypełniają się z wybranego narzędzia i można je zmienić tylko dla tej operacji:
+
+- Zmieniona wartość jest **pogrubiona** i oznaczona *(own)*. **From tool** wraca do wartości narzędzia. Inne narzędzie wpisuje swoje wartości.
+- Obok liczone są **Vc** (prędkość skrawania, m/min) i **fz** (posuw na ząb, mm) do sprawdzenia wartości.
+- Narzędzie zachowuje swoje wartości; inne operacje tym narzędziem się nie zmieniają. Niezmienione wartości dalej idą za narzędziem.
+- Program, Simulate, Verify i czas cyklu biorą wartości operacji. To samo narzędzie z innymi obrotami jest wywołane jeszcze raz pełnym `TOOL CALL`.
+- **Change tool...** daje operacji wartości nowego narzędzia. Details pokazuje wartości po narzędziu (*(own)* przy zmienionej).
+
 ---
 
 ## 6. Symulacja — Simulate

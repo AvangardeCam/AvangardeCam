@@ -329,6 +329,7 @@ class AdaptiveDialog(QtWidgets.QDialog):
         self.feeds = QtWidgets.QLabel()
         self.feeds.setObjectName("AvangardeCamAdaptiveFeeds")
         form.addRow(tr("Feeds") + ":", self.feeds)
+        self.chooser.follow(self.feeds, feeds_text)  # the operation's own spindle speed and feeds
         if start is None:
             start = last_adaptive(cam.suggested_adaptive_depth(job, model, self.faces))
         self.fields = AdaptiveFields(form, start, self.top, self)
@@ -378,7 +379,7 @@ class AdaptiveDialog(QtWidgets.QDialog):
     def _update(self, *_args):
         choice = self.tool()
         tool = choice.tool if choice is not None else None
-        self.feeds.setText(feeds_text(tool))
+        self.feeds.setText(feeds_text(self.chooser.cutting_tool()))
         self.fields.show_step_over(tool)
         try:
             adaptive = self.adaptive().validate() if not self.fields.unreadable() else None
