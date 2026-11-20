@@ -12,11 +12,12 @@ Website: **[avangardecam.eu](https://avangardecam.eu)** (videos, training, rates
 > **Status: beta.** It is used on real parts, but it is young. Always check the program in
 > the simulation and on the machine (dry run, reduced feed) before cutting.
 
-> **This is the `experimental` branch.** It adds zero points of operations (Move 0-Point with
-> 5 axes, Set 0-Point as default, Reset 0-Point, Make 0-Point active), a stock with its own
-> zero point, Simulate and Verify for a tilted tool (5 axes) and a second postprocessor for a
-> machine with a turning head. **None of it has run on a machine yet.** Adaptive asks to be
-> checked in Simulate or Verify before cutting.
+> **This is the `experimental` branch.** It is `main` with 5 axes switched on: Move 0-Point
+> with "5 axes" (the zero point turned by angles, the tool tilted, 3+2), Simulate and Verify for
+> a tilted tool and a second postprocessor for a machine with a turning head. **The 5 axes have
+> not run on a machine yet** and are only a first start. The zero points of operations without
+> 5 axes (Move 0-Point, `CYCL DEF 7`) are checked on a Bridgeport V1000 and are in `main` too.
+> Adaptive asks to be checked in Simulate or Verify before cutting.
 > The tested version is the [`main`](https://github.com/AvangardeCam/AvangardeCam/tree/main)
 > branch and its releases.
 
@@ -71,7 +72,7 @@ Needs **FreeCAD 1.1** or newer (Windows, Linux, macOS).
 1. Download **[AvangardeCam.zip](https://github.com/AvangardeCam/AvangardeCam/releases/latest/download/AvangardeCam.zip)**
    (the latest release) and unpack it. It contains one folder, `AvangardeCam`.
 
-   The **experimental version** (this branch, not run on a machine yet) is a pre-release of
+   The **experimental version** (this branch, 5 axes not run on a machine yet) is a pre-release of
    its own: **[AvangardeCam.zip of v0.2.0-experimental](https://github.com/AvangardeCam/AvangardeCam/releases/download/v0.2.0-experimental/AvangardeCam.zip)**.
    It installs the same way, in place of the tested one (one `AvangardeCam` folder at a time);
    to go back, put the tested version's folder there again.
