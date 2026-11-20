@@ -20,8 +20,10 @@ _PARAM = "Postprocessor"
 
 
 def last():
-    """The postprocessor chosen last (the first time: the default one)."""
-    return machines.find(params().GetString(_PARAM, machines.DEFAULT.key))
+    """The postprocessor chosen last (the first time, or one not offered
+    in this version: the default one)."""
+    post = machines.find(params().GetString(_PARAM, machines.DEFAULT.key))
+    return post if post in machines.CHOICES else machines.DEFAULT
 
 
 def remember(post):
@@ -38,7 +40,7 @@ def ask(doc):
     module = chosen.module
     stem = os.path.splitext(os.path.basename(doc.FileName))[0] if doc.FileName else doc.Label
     folder = params().GetString("LastExportDir", os.path.dirname(doc.FileName) or os.path.expanduser("~"))
-    filters = {filter_text(post): post for post in machines.ALL}
+    filters = {filter_text(post): post for post in machines.CHOICES}
     path, picked = QtWidgets.QFileDialog.getSaveFileName(
         FreeCADGui.getMainWindow(),
         tr("Export NC program"),

@@ -12,7 +12,7 @@ import FreeCADGui
 from PySide import QtCore, QtWidgets
 from PySide.QtCore import QT_TRANSLATE_NOOP
 
-from avangardecam import tr
+from avangardecam import edition, tr
 from avangardecam.engine import freecad_cam as cam
 from avangardecam.engine import geometry
 from avangardecam.engine import op_zero
@@ -390,9 +390,11 @@ class SetupView(DetailsView):
         self.fixture_label = self.add_row(tr("Fixture"), "")
         self.stock_label = self.add_row(tr("Stock"), "")
         self.operations_label = self.add_row(tr("Operations"), "")
-        self.note.setText(
-            tr("Snap-0-Point puts the zero point in the middle of the part, in the plane of the selected flat face; it is given in the model's coordinates. It is the setup's default zero point: the machine's preset. CAM > Move 0-Point moves it away (onto a wall, by a distance; with 5 axes it turns): operations keep the zero point they were made on and the program gives it from the default one. CAM > Reset 0-Point puts it back, Set 0-Point as default makes the present one the default. Rotate 0-Point turns the whole setup about Z.")  # fmt: skip
-        )
+        if edition.FIVE_AXES:
+            note = tr("Snap-0-Point puts the zero point in the middle of the part, in the plane of the selected flat face; it is given in the model's coordinates. It is the setup's default zero point: the machine's preset. CAM > Move 0-Point moves it away (onto a wall, by a distance; with 5 axes it turns): operations keep the zero point they were made on and the program gives it from the default one. CAM > Reset 0-Point puts it back, Set 0-Point as default makes the present one the default. Rotate 0-Point turns the whole setup about Z.")  # fmt: skip
+        else:
+            note = tr("Snap-0-Point puts the zero point in the middle of the part, in the plane of the selected flat face; it is given in the model's coordinates. It is the setup's default zero point: the machine's preset. CAM > Move 0-Point moves it away (onto a wall, by a distance): operations keep the zero point they were made on and the program gives it from the default one. CAM > Reset 0-Point puts it back, Set 0-Point as default makes the present one the default. Rotate 0-Point turns the whole setup about Z.")  # fmt: skip
+        self.note.setText(note)
         self.update_view()
 
     def update_view(self):

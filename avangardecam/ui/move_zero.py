@@ -13,7 +13,7 @@ puts the zero point in the middle of the circle at the mouth of its hole
 or round edge selected before the window opens is taken at once, as
 Snap-0-Point does.
 
-With "5 axes" ticked the zero point also turns: by angles typed about
+With "5 axes" ticked (shown only when edition.FIVE_AXES) the zero point also turns: by angles typed about
 its own X, Y and Z (in this order, about the axes as they stand before
 the turn), and Select wall turns its Z out of the wall, square to it,
 Select circle along the circle's axis, out of the part ("Z out of the
@@ -33,7 +33,7 @@ import FreeCADGui
 
 from PySide import QtCore, QtWidgets
 
-from avangardecam import params, tr
+from avangardecam import edition, params, tr
 from avangardecam.engine import ProjectError
 from avangardecam.engine import freecad_cam as cam
 from avangardecam.engine import move_zero as engine
@@ -246,6 +246,7 @@ class MoveZeroDialog(QtWidgets.QDialog):
             tr("Turn the zero point as well: for a machine that tilts its head or table (its own postprocessor)")
         )
         layout.addWidget(self.five_axes)
+        self.five_axes.setVisible(edition.FIVE_AXES)  # unticked when hidden: no turn
         self.turn_group = QtWidgets.QWidget()
         self.turn_group.setObjectName("AvangardeCamMoveZeroTurn")
         turn_layout = QtWidgets.QVBoxLayout(self.turn_group)

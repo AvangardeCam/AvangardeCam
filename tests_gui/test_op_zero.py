@@ -17,6 +17,7 @@ import traceback
 import FreeCAD
 import FreeCADGui
 import avangardecam
+from avangardecam import edition
 from PySide import QtCore, QtGui, QtWidgets
 
 OUT = os.environ.get("AC_TEST_OUT", tempfile.gettempdir())
@@ -298,6 +299,9 @@ def step3():
     check(w is not None, "Move 0-Point opens its window")
     five = part("5X")
     check(five is not None and five.text() == "5 axes" and not five.isChecked(), "5 axes, not ticked")
+    # shown only in the version with 5 axes (edition.FIVE_AXES); the turn under it is
+    # the same code in both, so the test ticks it anyway
+    check(five.isVisible() == edition.FIVE_AXES, "5 axes shown: {}".format(five.isVisible()))
     check(not part("Turn").isVisible(), "the turn is not shown without it")
     five.click()
     check(part("Turn").isVisible(), "ticked: the turn is shown")
