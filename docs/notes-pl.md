@@ -2114,3 +2114,28 @@ Test: `test_layout.py` (żaden przycisk węższy niż jego podpis przy 1920 px).
   wywołanie narzędzia.
 - Change tool… kasuje wartości własne (nowe narzędzie = jego wartości).
 - Testy: `tests/test_cutting_data.py`, `tests_gui/test_cutting_data.py`.
+
+## 2026-11-20: dodawanie i edycja narzędzi w bibliotece
+
+- Prośba usera (część 2): proste dodawanie i edycja narzędzi. Okno Tool library ma New tool...,
+  Edit..., Duplicate..., Delete; okno narzędzia (`ui/tool_editor.py`) z rysunkiem typu z FreeCADa
+  (`Mod/CAM/Tools/Shape/*.svg`) i tylko polami tego typu, nazwanymi literami z rysunku; obroty i
+  posuwy obowiązkowe (bez nich program się nie zrobi), Vc/fz obok; OK pokazuje braki i nie zamyka.
+- Pierwsza zmiana kopiuje bibliotekę z modułu do `<user data>/AvangardeCam/tools.json` i ustawia
+  `ToolLibraryFile` (aktualizacja ZIP-em zastępuje folder modułu); biblioteka otwarta przez
+  Open other library... zmieniana na miejscu.
+- Edit... narzędzia, które jest w otwartym projekcie: pytanie, czy zmienić też tam
+  (`replace_tool`; inny numer T → zostaje w projekcie jak było). Id wpisu się nie zmienia.
+- Moje decyzje: nowy numer = najniższy wolny (biblioteka ma T1000, więc max+1 dawał T1001);
+  narzędzia z projektu da się teraz zaznaczyć (żeby je edytować), Add to project je pomija; brak
+  ostrzeżenia „inne narzędzie pod tym T” — w bibliotece warianty jednego T zawsze mają inne nazwy,
+  a często inny typ/średnicę (płytki), więc okno tylko pokazuje, co jeszcze jest pod tym numerem.
+- Testy: `tests/test_tool_editing.py` (m.in. wszystkie 276 narzędzi biblioteki przechodzą
+  sprawdzenie), `tests_gui/test_tool_editing.py`; `test_project.py`: wariant z projektu nie
+  dodaje się drugi raz (przycisk Add wyłączony zamiast niezaznaczalnego wiersza).
+- Edit... i OK bez zmian na każdym z 276 narzędzi (test GUI) znalazło: ostry czubek fazownika
+  i V-bitu (tip 0) zapisywał się jako brak → FreeCAD wstawiał swój (fazownik 5 mm, V-bit 1 mm)
+  i projekt dostawał czubek 5 mm na Ø6. Teraz 0 zostaje 0 (pole pokazuje 0.000 mm, nie „-”),
+  a wartość niezmieniona zostaje dokładnie jak była (nie zaokrąglona przez pole).
+- README i instrukcja: bibliotekę ze starego programu prawdopodobnie łatwo przerobić na JSON
+  AvangardeCam asystentem AI (np. Claude Code), potem Open other library...

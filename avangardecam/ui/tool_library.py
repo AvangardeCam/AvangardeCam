@@ -14,8 +14,14 @@ tools of the operation's kind (Drills only), on as only_on says.
 
 A click on the T or Ø header sorts the table by it, smallest first; a
 second click, largest first (an arrow in the header shows which).
+
+New tool..., Edit..., Duplicate... and Delete change the library
+(ui.tool_editor, model.tool_editing); the first change copies the shipped
+library to the user's own file (engine.tool_library_file). A changed tool
+that the open project has is made again there when the user wants.
 """
 
+import dataclasses
 import os
 
 import FreeCADGui
@@ -24,7 +30,7 @@ from PySide import QtCore, QtGui, QtWidgets
 
 from avangardecam import params, tool_library_path, tr
 from avangardecam.engine import freecad_cam as cam
-from avangardecam.model import library
+from avangardecam.model import library, tool_editing
 from avangardecam.model import tools as model_tools
 
 ALL = "*"
@@ -140,6 +146,23 @@ class ToolLibraryDialog(QtWidgets.QDialog):
         self.table.itemSelectionChanged.connect(self._update_buttons)
         self.table.itemDoubleClicked.connect(lambda _item: self.use_selected() if pick else self.add_selected())
         layout.addWidget(self.table, 1)
+
+        editing = QtWidgets.QHBoxLayout()
+        self.edit_buttons = {}
+        for name, text, slot in (
+            ("New", "New tool...", self.new_tool),
+            ("Edit", "Edit...", self.edit_selected),
+            ("Duplicate", "Duplicate...", self.duplicate_selected),
+            ("Delete", "Delete", self.delete_selected),
+        ):
+            button = QtWidgets.QPushButton(tr(text))
+            button.setObjectName("AvangardeCamTool" + name)
+            button.clicked.connect(slot)
+            editing.addWidget(button)
+            self.edit_buttons[name] = button
+        self.edit_buttons["Duplicate"].setToolTip(tr("A copy to change, e.g. the same tool for another workpiece material"))  # fmt: skip
+        editing.addStretch(1)
+        layout.addLayout(editing)
 
         self.message = QtWidgets.QLabel()
         self.message.setObjectName("AvangardeCamToolLibraryMessage")
@@ -264,8 +287,7 @@ class ToolLibraryDialog(QtWidgets.QDialog):
                 if column not in _TEXT_COLUMNS:
                     item.setTextAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
                 if current is not None and current.library_id == entry.id:
-                    if not self.pick:  # already there; picked, it is used as it is
-                        item.setFlags(item.flags() & ~QtCore.Qt.ItemIsSelectable)
+                    # selectable to edit it; Add to project leaves it out (already there)
                     item.setForeground(grey)
                     item.setToolTip(tr("In the project"))
                 elif current is not None:
@@ -290,8 +312,18 @@ class ToolLibraryDialog(QtWidgets.QDialog):
         rows = sorted({index.row() for index in self.table.selectionModel().selectedRows()})
         return [self.shown[row] for row in rows]
 
+    def _addable(self, entries):
+        """The entries not in the project already (picked, any is used as it is)."""
+        if self.pick:
+            return list(entries)
+        project = self._project()
+        return [e for e in entries if getattr(project.get(e.number), "library_id", None) != e.id]
+
     def _update_buttons(self):
-        self.add_button.setEnabled(bool(self.selected_entries()))
+        selected = self.selected_entries()
+        self.add_button.setEnabled(bool(self._addable(selected)))
+        for name in ("Edit", "Duplicate", "Delete"):
+            self.edit_buttons[name].setEnabled(len(selected) == 1)
 
     def select_ids(self, ids):
         """Select the rows of the given library ids (used by tests)."""
@@ -324,7 +356,7 @@ class ToolLibraryDialog(QtWidgets.QDialog):
         self.accept()
 
     def add_selected(self):
-        entries = self.selected_entries()
+        entries = self._addable(self.selected_entries())
         if not entries:
             return
         numbers = [e.number for e in entries]
@@ -359,3 +391,115 @@ class ToolLibraryDialog(QtWidgets.QDialog):
         if errors:
             text = (text + "\n" if text else "") + "\n".join(errors)
         self.message.setText(text)
+
+    # -- changing the library -------------------------------------------------
+
+    def _one_selected(self):
+        entries = self.selected_entries()
+        if len(entries) != 1:
+            self.message.setText(tr("Choose one tool."))
+            return None
+        return entries[0]
+
+    def new_tool(self):
+        material = self.material_box.currentData()
+        start = tool_editing.blank(self.entries, material=material if material not in (None, ALL) else "")
+        self._change(start, tr("New tool"), new=True)
+
+    def edit_selected(self):
+        entry = self._one_selected()
+        if entry is not None:
+            self._change(entry, tr("Edit tool"), new=False)
+
+    def duplicate_selected(self):
+        entry = self._one_selected()
+        if entry is not None:
+            self._change(dataclasses.replace(entry, id=""), tr("Duplicate tool"), new=True)
+
+    def delete_selected(self):
+        from avangardecam.engine import tool_library_file
+
+        entry = self._one_selected()
+        if entry is None:
+            return
+        users = tool_library_file.project_tools_of(self.doc, entry.id)
+        text = tr("Delete T{} {} ({}) from the tool library?").format(entry.number, entry.tool.name, entry.workpiece_material or "?")  # fmt: skip
+        if users:
+            text += "\n\n" + tr("The project keeps its own copy of it.")
+        if not self.confirm(tr("Tool library"), text):
+            return
+        self._write(lambda entries: tool_editing.removed(entries, entry.id), None)
+
+    def _change(self, start, title, new):
+        from avangardecam.ui.tool_editor import ToolEditorDialog
+
+        dialog = ToolEditorDialog(start, self.entries, title, self)
+        self.editor = dialog  # tests fill it in
+        if not self.run_editor(dialog):
+            return
+        changed = dialog.entry()
+        if new:
+            changed = tool_editing.with_new_id(self.entries, changed)
+            self._write(lambda entries: tool_editing.added(entries, changed), changed)
+        else:
+            self._write(lambda entries: tool_editing.replaced(entries, changed), changed)
+            self._update_project(changed)
+
+    def _write(self, change, select):
+        """Change the library file (change(entries) -> entries) and show it,
+        select: the LibraryTool to select after."""
+        from avangardecam.engine import tool_library_file
+
+        try:
+            path, copied = tool_library_file.editable_path()
+            entries = library.load(path)
+            tool_library_file.save(path, change(entries))
+        except (OSError, ValueError) as exc:
+            self.message.setText(tr("The tool library was not changed: {}").format(exc))
+            return False
+        self.load(path)
+        if select is not None:
+            self.search.clear()
+            self.material_box.setCurrentIndex(0)
+            self.select_ids([select.id])
+            row = next((i for i, e in enumerate(self.shown) if e.id == select.id), None)
+            if row is not None:
+                self.table.scrollToItem(self.table.item(row, 0))
+        text = tr("Saved in {}").format(path)
+        if copied:
+            text += "\n" + tr("Your tools are kept in this file from now on; an update of AvangardeCam does not change it.")  # fmt: skip
+        self.message.setText(text)
+        return True
+
+    def _update_project(self, entry):
+        from avangardecam.engine import tool_library_file
+
+        users = tool_library_file.project_tools_of(self.doc, entry.id)
+        if not users:
+            return
+        setups = ", ".join(sorted({job.Label for job, _tool in users}))
+        if not self.confirm(
+            tr("Tool library"),
+            tr("T{} is in the project ({}). Change it there too?\n\nOperations using it get its new geometry, spindle speed and feeds (an operation's own speed and feeds stay).").format(entry.number, setups),  # fmt: skip
+        ):
+            return
+        try:
+            done, left = tool_library_file.update_projects(self.doc, entry)
+        except cam.ProjectError as exc:
+            self.message.setText(self.message.text() + "\n" + str(exc))
+            return
+        self._fill()
+        text = self.message.text()
+        if done:
+            text += "\n" + tr("Changed in the project: {}").format(", ".join(job.Label for job in done))
+        if left:
+            text += "\n" + tr("Not changed in {}: the project has it under another T number.").format(", ".join(job.Label for job in left))  # fmt: skip
+        self.message.setText(text)
+
+    # tests replace these to answer for the user
+    def run_editor(self, dialog):
+        return dialog.exec()
+
+    def confirm(self, title, text):
+        return QtWidgets.QMessageBox.question(self, title, text) == QtWidgets.QMessageBox.Yes
+

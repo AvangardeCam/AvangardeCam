@@ -96,6 +96,19 @@ Zmiany zapisuje **OK**. W przykładzie stock ma 74,20 × 50,22 × 15,20 mm.
 
 Gdy detal robisz z odlewu, ciętego klocka albo surówki obrobionej wcześniej, kliknij **Custom stock** na wstążce (jest też **Custom stock...** w oknie Stock i w Details stocka) i wybierz jego plik STEP, IGES, BREP lub STL. **Put the middle of the stock in the middle of the model** (domyślnie zaznaczone) przesuwa surówkę tak, że środek jej obrysu trafia na środek obrysu modelu — plik może ją rysować gdziekolwiek. Surówka, którą plik już rysuje wokół detalu, zostaje na miejscu (naddatki tam, gdzie dała je odlewnia, np. tylko od spodu). Bez zaznaczenia zawsze zostaje tam, gdzie narysowano ją w pliku (w układzie detalu). Surówka jest tylko przesuwana, nigdy obracana: jeśli model z niej wystaje (za mała albo leży w inną stronę), komunikat mówi, o ile i z której strony. Details pokazują plik i gdzie jest środek surówki; **Put in the middle** ustawia ją na środku później. Prawy klik na Stock w liście otwiera menu: **Move stock...** przesuwa surówkę po osiach X, Y, Z mocowania, **Put in the middle**, **Custom stock...**, **Stock...**. **Replace by box with allowances** wraca do pudełka. Simulate i Verify zaczynają od materiału surówki.
 
+### Biblioteka narzędzi
+
+**Tool library** na wstążce pokazuje narzędzia warsztatu, każdy numer T raz na materiał obrabiany (z własnymi obrotami i posuwami). **Add to project** dodaje zaznaczone do aktywnego mocowania. Pod tabelą:
+
+- **New tool...** otwiera puste narzędzie z najniższym wolnym numerem T. Wybierz **Type**: okno pokazuje rysunek typu z FreeCADa i tylko jego pola, nazwane literami z rysunku (Diameter (D), Corner radius (R), Cutting length (H), Length out of the holder (L), Shank diameter (S), ...). Wpisz obroty i oba posuwy; obok liczą się Vc i fz. **OK** mówi, czego brakuje albo co jest źle, i nie zamyka okna.
+- **Edit...** zmienia zaznaczone narzędzie. Gdy otwarty projekt je ma, AvangardeCam pyta, czy zmienić je też tam: jego operacje dostają nową geometrię, obroty i posuwy (własne obroty i posuwy operacji zostają).
+- **Duplicate...** kopiuje zaznaczone narzędzie, np. na inny materiał pod tym samym numerem T. Okno pokazuje, co jeszcze jest w bibliotece pod tym numerem.
+- **Delete** usuwa zaznaczone narzędzie z biblioteki; projekt zachowuje swoją kopię.
+
+Biblioteka dostarczana z AvangardeCam jest zastępowana przy każdej aktualizacji, więc pierwsza zmiana kopiuje ją do Twojego pliku w folderze użytkownika FreeCADa (`AvangardeCam/tools.json`), używanego od tej pory. Biblioteka otwarta przez **Open other library...** jest zmieniana tam, gdzie leży.
+
+**Narzędzia z Twojego starego programu.** Biblioteka to zwykły plik JSON: jego format jest opisany na początku `avangardecam/model/library.py`, a `Resources/library/tools.json` to pełny przykład. Asystent AI do programowania, np. Claude Code, prawdopodobnie szybko przerobi tabelę narzędzi z Twojego starego programu (jej eksport, CSV albo arkusz) na ten format: daj mu swoją tabelę i te dwa pliki i poproś o bibliotekę narzędzi AvangardeCam. Wynik otwórz przez **Open other library...**; pliku, którego nie da się odczytać, AvangardeCam nie przyjmie i poda powód. Zanim zaczniesz nimi skrawać, sprawdź kilka narzędzi (średnica, długości, obroty i posuwy): **Edit...** i **OK** na narzędziu też powie, co jest z nim nie tak.
+
 ---
 
 ## 3. Wiercenie z modelu 3D
