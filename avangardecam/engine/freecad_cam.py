@@ -2297,7 +2297,14 @@ def _nc_tool(op):
 
 def nc_operation(op):
     """An operation as the NC program has it, read on the setup's active
-    zero point."""
+    zero point, with its own spindle speed and feeds (engine.cutting_data)."""
+    from avangardecam.engine import cutting_data
+
+    return cutting_data.operation(op, _nc_operation(op))
+
+
+def _nc_operation(op):
+    """An operation as the NC program has it, with its tool's values."""
     if drilling_of(op) is not None:
         tool = _nc_tool(op)
         return model_nc.Operation(model_nc.DRILLING, op.Label, tool, (), _drill_cycle(op, tool))

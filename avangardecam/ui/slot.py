@@ -378,6 +378,7 @@ class SlotDialog(QtWidgets.QDialog):
         self.feeds = QtWidgets.QLabel()
         self.feeds.setObjectName("AvangardeCamSlotFeeds")
         form.addRow(tr("Feeds") + ":", self.feeds)
+        self.chooser.follow(self.feeds, feeds_text)  # the operation's own spindle speed and feeds
         first = start if start is not None else last_slot_milling()
         self.fields = SlotFields(form, first, _model_depth(self.found), self)
         self.levels = QtWidgets.QLabel()
@@ -427,7 +428,7 @@ class SlotDialog(QtWidgets.QDialog):
     def _update(self, *_args):
         choice = self.tool()
         tool = choice.tool if choice is not None else None
-        self.feeds.setText(feeds_text(tool))
+        self.feeds.setText(feeds_text(self.chooser.cutting_tool()))
         self.fields.show_step_over(tool)
         try:
             milling = self.milling().validate() if not self.fields.unreadable() else None
@@ -622,7 +623,7 @@ class SlotView(details.DetailsView):
         tc = self.op.ToolController
         tool = next((t.tool for t in cam.project_tools(self.job) if t.controller is tc), None)
         self.tool_label.setText(details.tool_row_text(self.op, self.job))
-        self.feeds_label.setText(feeds_text(tool))
+        self.feeds_label.setText(feeds_text(details.cutting_tool(self.op)))
         self.fields.show_step_over(tool)
         moves, lowest = cam.path_summary(self.op)
         if moves and lowest is not None:

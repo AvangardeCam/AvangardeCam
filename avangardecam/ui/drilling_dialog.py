@@ -367,6 +367,7 @@ class DrillingDialog(QtWidgets.QDialog):
         form.addRow(tr("Holes") + ":", holes_label)
         self.chooser = ToolChooser(job, "AvangardeCamDrilling", only=DRILLS_ONLY)
         form.addRow(tr("Tool") + ":", self.chooser)
+        self.chooser.cutting.set_labels("Feed Q206 (down)", "Feed Q253 (to the start)")
         self.fit = QtWidgets.QLabel()
         self.fit.setObjectName("AvangardeCamDrillingFit")
         self.fit.setWordWrap(True)
@@ -376,6 +377,7 @@ class DrillingDialog(QtWidgets.QDialog):
         self.feeds.setObjectName("AvangardeCamDrillingFeeds")
         self.feeds.setToolTip(tr(FEEDS_TIP))
         form.addRow(tr("Feeds") + ":", self.feeds)
+        self.chooser.follow(self.feeds, feeds_text)  # the operation's own spindle speed and feeds
         if start is None:
             start = last_drilling()
             if model:
@@ -437,7 +439,7 @@ class DrillingDialog(QtWidgets.QDialog):
     def _update(self, *_args):
         choice = self.tool()
         tool = choice.tool if choice is not None else None
-        self.feeds.setText(feeds_text(tool))
+        self.feeds.setText(feeds_text(self.chooser.cutting_tool()))
         self.fit.setText(fit_text(self.holes, tool))
         self.fit.setVisible(bool(self.fit.text()))
         if self.fields.unreadable():

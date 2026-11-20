@@ -2124,3 +2124,20 @@ Test: `test_layout.py` (żaden przycisk węższy niż jego podpis przy 1920 px).
   `Material.cut_to(t, seconds)` tnie partiami segmentów do terminu, a okno w trakcie grania tnie
   najwyżej `PLAY_CUT_S` (0,12 s) i gdy nie zdąży, narzędzie czeka na stock (`behind`) — gra wolniej,
   ale okno nie staje.
+
+## 2026-11-20: obroty i posuwy w operacji
+
+- Prośba usera: narzędzia mają swoje wartości, w operacji są domyślne, ale można je zmienić.
+  Każde okno operacji ma pod narzędziem Spindle speed / Feed XY / Feed Z (wiercenie: Feed Q206,
+  Feed Q253), wypełnione z narzędzia; zmieniona wartość pogrubiona i *(own)*, „From tool” wraca,
+  inne narzędzie wpisuje swoje. Vc i fz tylko do podglądu (decyzja usera).
+- Wartości własne leżą w operacji (`engine/cutting_data.py`, 0 = z narzędzia), narzędzie (tool
+  controller) zostaje nietknięte; ścieżki liczone dalej z wartościami narzędzia, a
+  `nc_operation` podmienia narzędzie, posuwy ruchów (posuw XY narzędzia → własny XY, Z → Z) i
+  Q206/Q253 cyklu (`model/cutting_data.py`). Dzięki temu program, Simulate, Verify i czas cyklu
+  biorą to samo.
+- To samo T z innymi obrotami: pełny `TOOL CALL 21 Z S…` z numerem, jak przy wymianie narzędzia
+  (decyzja usera), TOOL DEF wskazuje następne inne narzędzie; model maszyny też liczy to jako
+  wywołanie narzędzia.
+- Change tool… kasuje wartości własne (nowe narzędzie = jego wartości).
+- Testy: `tests/test_cutting_data.py`, `tests_gui/test_cutting_data.py`.

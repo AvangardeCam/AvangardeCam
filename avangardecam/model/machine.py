@@ -99,14 +99,17 @@ class Machine:
 
     def elements(self, op):
         result = []
-        self.changed = self.tool is None or self.tool != op.tool.number
+        # another tool, or the same with another spindle speed (an
+        # operation's own, model.cutting_data): the postprocessor calls it
+        called = (op.tool.number, op.tool.spindle_rpm)
+        self.changed = self.tool is None or self.tool != called
         # the zero point the operation counts from (model.tilted): the tool
         # as it sees it, and how high the tool change height is there
         moved = op.zero != self.zero
         self.position, high = tilted.arrive(self, op)
         self.zero = op.zero
         if self.changed:
-            self.tool = op.tool.number
+            self.tool = called
             if self.full and self.position[0] is not None and self.position[2] != high:
                 self._add(result, nc.Move(nc.RAPID, None, None, high), ("change",))
             self.position = [self.position[0], self.position[1], high]

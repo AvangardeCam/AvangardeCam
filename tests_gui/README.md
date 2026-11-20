@@ -184,6 +184,11 @@ cat /tmp/ac.txt
   again with the list and the details following; they still work after expert mode and
   back; a new project disables them.
 
+- `test_cutting_data.py`: the Facing window with T5: the spindle speed and feeds filled from the
+  tool, Vc and fz beside them; a changed value bold and "(own)", From tool back, another tool its
+  values; OK keeps the own ones on the operation (the details, the program: a whole TOOL CALL with
+  the own speed, Q31 the own feed; the tool keeps its own), Edit... shows them (one undo step),
+  Change tool... drops them; the drilling window names its feeds Q206 and Q253.
 - `test_facing.py`: CAM > Facing with nothing clicked only says what to click; the top face
   clicked: the window (its picture beside the fields, the face, Start Z from the top of the stock, the Z levels, no tool: OK
   refused, a drill refused, T5: 4.2 mm step over and 5 passes, the face mill T16 Ø50: 1 pass, its

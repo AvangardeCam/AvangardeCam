@@ -265,6 +265,7 @@ class ThreadMillingDialog(QtWidgets.QDialog):
         self.feeds = QtWidgets.QLabel()
         self.feeds.setObjectName("AvangardeCamThreadFeeds")
         form.addRow(tr("Feeds") + ":", self.feeds)
+        self.chooser.follow(self.feeds, feeds_text)  # the operation's own spindle speed and feeds
         if start is None:
             start = last_thread(main_diameter(self.holes) or 1.0)
         self.fields = ThreadFields(form, start, self)
@@ -321,7 +322,7 @@ class ThreadMillingDialog(QtWidgets.QDialog):
         if not self.major_typed and is_thread_mill(tool) and self.holes:
             self.fields.set_major(model_threads.suggested_major(main_diameter(self.holes), tool.pitch_mm))
         self.fields.show_name(tool.pitch_mm if is_thread_mill(tool) else None)
-        self.feeds.setText(feeds_text(tool))
+        self.feeds.setText(feeds_text(self.chooser.cutting_tool()))
         if self.fields.unreadable():
             self.fit.setText("")
             self.helix.setText(details.NONE)

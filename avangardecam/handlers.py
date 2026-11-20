@@ -575,6 +575,7 @@ def contour_tooling(sketch=None):
     doc.openTransaction(tr("Contour tooling"))
     try:
         op = cam.add_contour_sketches(job, [(one, lines, back) for (one, lines), back in zip(picks, turned)], dialog.contour(), tc)  # fmt: skip
+        _keep_cutting_data(op, dialog)
     except (cam.ProjectError, ValueError) as exc:
         doc.abortTransaction()
         _error(str(exc))
@@ -850,6 +851,7 @@ def _add_operation(doc, job, dialog, make, step):
     doc.openTransaction(step)
     try:
         op = make(tc)
+        _keep_cutting_data(op, dialog)
     except (cam.ProjectError, ValueError) as exc:
         doc.abortTransaction()
         _error(str(exc))
@@ -858,6 +860,14 @@ def _add_operation(doc, job, dialog, make, step):
     scene.set_active_setup(job)
     _select("operation", op.Name)
     return True
+
+
+def _keep_cutting_data(op, dialog):
+    """The spindle speed and feeds typed in an operation's window
+    (ui.cutting_data) kept on it as its own (engine.cutting_data)."""
+    from avangardecam.engine import cutting_data
+
+    cutting_data.set_own(op, dialog.chooser.cutting.own())
 
 
 def _tool_controller(job, choice):
@@ -949,6 +959,10 @@ def change_tool(op):
     doc.openTransaction(tr("Change tool"))
     try:
         cam.set_tool(op, tc)
+        from avangardecam.engine import cutting_data
+        from avangardecam.model import cutting_data as model_cutting_data
+
+        cutting_data.set_own(op, model_cutting_data.NONE)  # the new tool's spindle speed and feeds
     except (cam.ProjectError, ValueError) as exc:
         doc.abortTransaction()
         _error(str(exc))
@@ -1018,6 +1032,9 @@ def edit_operation(op):
         _status(tr("{} was made in FreeCAD; change it in expert mode.").format(op.Label))
         return
     dialog.setWindowTitle(tr("Edit {}").format(op.Label))
+    from avangardecam.engine import cutting_data
+
+    dialog.chooser.cutting.start(cutting_data.own(op))
     if not dialog.exec():
         return
     doc = op.Document
@@ -1029,6 +1046,7 @@ def edit_operation(op):
     doc.openTransaction(tr("Edit operation"))
     try:
         cam.change_operation(op, values(), tc)
+        _keep_cutting_data(op, dialog)
     except (cam.ProjectError, ValueError) as exc:
         doc.abortTransaction()
         _error(str(exc))
