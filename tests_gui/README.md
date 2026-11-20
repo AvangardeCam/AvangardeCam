@@ -194,6 +194,10 @@ cat /tmp/ac.txt
   (R)), OK with nothing filled in says what is missing, filled in saved into the user's own copy
   of the library (the shipped one untouched) and selected; Edit... of T21 in the project changes it
   there too; Duplicate... for another material lists the other T21 tools; Delete.
+- `test_number_entry.py`: number boxes quick to type in: a click right of the number puts the
+  cursor at its end, before the unit (Backspace takes a digit, a digit typed goes in), a double
+  click selects the whole number with its sign and without the unit (typed over), "none" selected
+  at a click; a FreeCAD length box, spin boxes with a unit or the prefix T, the tool editor's boxes.
 - `test_facing.py`: CAM > Facing with nothing clicked only says what to click; the top face
   clicked: the window (its picture beside the fields, the face, Start Z from the top of the stock, the Z levels, no tool: OK
   refused, a drill refused, T5: 4.2 mm step over and 5 passes, the face mill T16 Ø50: 1 pass, its

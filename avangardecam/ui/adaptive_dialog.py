@@ -27,7 +27,7 @@ from PySide.QtCore import QT_TRANSLATE_NOOP
 from avangardecam import params, tr
 from avangardecam.engine import freecad_cam as cam
 from avangardecam.model import operations as model_operations
-from avangardecam.ui import details, manual, window_fit
+from avangardecam.ui import details, manual, number_entry, window_fit
 from avangardecam.ui.tool_choice import ToolChooser, library_id
 
 _LAST_ADAPTIVE = "LastAdaptive"  # the values but Start Z and Z-Depth, as JSON
@@ -181,6 +181,7 @@ class AdaptiveFields(QtCore.QObject):
         self.step_over.setDecimals(1)
         self.step_over.setSuffix(" %")
         self.step_over.setValue(adaptive.step_over_percent)
+        number_entry.install(self.step_over)
         self.step_over.setToolTip(tr("The most of the tool's diameter it takes sideways"))
         self.step_over.valueChanged.connect(lambda *_args: self.typed.emit())
         self.step_over_mm = QtWidgets.QLabel()
@@ -209,6 +210,7 @@ class AdaptiveFields(QtCore.QObject):
         self.helix.setDecimals(1)
         self.helix.setSuffix(" °")
         self.helix.setValue(adaptive.helix_angle_deg)
+        number_entry.install(self.helix)
         self.helix.setToolTip(tr("Of the helix the tool goes down on into a closed area"))
         self.helix.valueChanged.connect(lambda *_args: self.typed.emit())
         advanced.addRow(tr("Helix angle") + ":", self.helix)

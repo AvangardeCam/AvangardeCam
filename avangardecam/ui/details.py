@@ -21,6 +21,7 @@ from avangardecam.model import operations as model_operations
 from avangardecam.model import stock as model_stock
 from avangardecam.model import tools as model_tools
 from avangardecam.ui import next_setup as ui_next_setup
+from avangardecam.ui import number_entry
 
 NONE = "—"
 
@@ -122,7 +123,7 @@ def length_box(value, minimum=0.0, maximum=model_stock.BoxStock.MAX_ALLOWANCE_MM
     box.setProperty("minimum", minimum)
     box.setProperty("maximum", maximum)
     box.setProperty("rawValue", value)
-    return box
+    return number_entry.install(box)
 
 
 def depth_box(value):

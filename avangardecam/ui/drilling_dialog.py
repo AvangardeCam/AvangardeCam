@@ -30,7 +30,7 @@ from avangardecam import params, tr
 from avangardecam.engine import geometry
 from avangardecam.model import operations as model_operations
 from avangardecam.model import tools as model_tools
-from avangardecam.ui import details, manual, window_fit
+from avangardecam.ui import details, manual, number_entry, window_fit
 from avangardecam.ui.tool_choice import ToolChooser, library_id
 
 DEFAULT_DEPTH_MM = -10.0
@@ -238,6 +238,7 @@ class DrillingFields(QtCore.QObject):
         self.dwell.setSingleStep(0.1)
         self.dwell.setSuffix(" s")
         self.dwell.setValue(drilling.dwell_s)
+        number_entry.install(self.dwell)
         self.dwell.valueChanged.connect(lambda *_args: self.typed.emit())
         form.addRow(tr("Dwell at bottom (Q211)") + ":", self.dwell)
 

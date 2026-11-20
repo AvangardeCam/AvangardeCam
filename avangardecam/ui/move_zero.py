@@ -40,7 +40,7 @@ from avangardecam.engine import move_zero as engine
 from avangardecam.model import move_zero as model
 from avangardecam.model import op_zero as model_zero
 from avangardecam.ui import circle_zero
-from avangardecam.ui import details
+from avangardecam.ui import details, number_entry
 
 STATUS_TIMEOUT_MS = 4000
 # the selection is read this long after a click: after FreeCAD's own
@@ -268,6 +268,7 @@ class MoveZeroDialog(QtWidgets.QDialog):
             box.setDecimals(3)
             box.setSuffix(" °")
             box.setKeyboardTracking(False)
+            number_entry.install(box)
             box.setToolTip(
                 tr("Angle the zero point turns about its own {} (positive: counter-clockwise seen against the axis); X first, then Y, then Z, about the axes as they stand before the turn").format(axis)  # fmt: skip
             )

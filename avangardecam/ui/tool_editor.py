@@ -19,6 +19,7 @@ from PySide import QtCore, QtGui, QtSvg, QtWidgets
 from avangardecam import tr
 from avangardecam.model import cutting_data, library, tool_editing
 from avangardecam.model.tools import SHAPES, Tool
+from avangardecam.ui import number_entry
 
 # how the window names the types
 SHAPE_LABELS = {
@@ -84,7 +85,7 @@ def _number_box(name, decimals, suffix, highest):
     box.setSuffix(suffix)
     box.setSpecialValueText("-")  # 0: none
     box.setKeyboardTracking(False)
-    return box
+    return number_entry.install(box)
 
 
 class ToolEditorDialog(QtWidgets.QDialog):
@@ -110,6 +111,7 @@ class ToolEditorDialog(QtWidgets.QDialog):
         self.number.setRange(0, 9999)
         self.number.setPrefix("T")
         self.number.setValue(entry.number)
+        number_entry.install(self.number)
         top.addRow(tr("T number") + ":", self.number)
         self.same = QtWidgets.QLabel()
         self.same.setObjectName("AvangardeCamToolSameNumber")
@@ -233,6 +235,7 @@ class ToolEditorDialog(QtWidgets.QDialog):
                 box.setRange(0, 20)
                 box.setSpecialValueText("-")
                 box.setValue(int(self.values.get(field.name) or 0))
+                number_entry.install(box)
             else:
                 angle = field.name in _ANGLES
                 box = _number_box("AvangardeCamTool" + field.name, 1 if angle else 3, " °" if angle else " mm", 180.0 if angle else 1000.0)  # fmt: skip
