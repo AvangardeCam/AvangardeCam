@@ -354,6 +354,40 @@ class TestBridgeportShift(unittest.TestCase):
         end = written[written.rindex("CYCL DEF 7.0 NULPUNT") :]
         self.assertTrue(end.startswith("CYCL DEF 7.0 NULPUNT\n24 CYCL DEF 7.1  X+0.\n25 CYCL DEF 7.2  Y+0.\n26 CYCL DEF 7.3  Z+0.\n27 L Z100 R0 FMAX\n"), end)
 
+    def test_every_move_under_its_own_shift(self):
+        """Operations on the preset after shifted ones (the same tool, another
+        tool, the next setup): every move of each runs under its own datum
+        shift, none left on at a preset or at the program's end."""
+        other = frame.Frame((-25.0, 0.0, 0.0), *AXES)
+        setups = (
+            nc.Setup(1, "Setup 1", None, (
+                contour("A", zero=SHIFTED), contour("B"), contour("C", zero=other), contour("D", zero=SHIFTED),
+                contour("E", DRILL), contour("F", DRILL, zero=other),
+            )),
+            nc.Setup(2, "Setup 2", None, (contour("G", DRILL), contour("H", MILL, zero=SHIFTED), contour("I", MILL))),
+        )  # fmt: skip
+        expected = [(20.0, -10.0, -2.0), (0.0, 0.0, 0.0), (-25.0, 0.0, 0.0), (20.0, -10.0, -2.0), (0.0, 0.0, 0.0), (-25.0, 0.0, 0.0),
+                    (0.0, 0.0, 0.0), (20.0, -10.0, -2.0), (0.0, 0.0, 0.0)]  # fmt: skip
+        written = text(heidenhain.write(nc.Program("DEMO", "demo", datetime.date(2026, 11, 16), setups)))
+        shift = [0.0, 0.0, 0.0]
+        operation = -1
+        under = {}  # operation -> the shifts its moves ran under
+        for line in written.splitlines():
+            block = line.split(" ", 1)[1] if " " in line else line
+            if block.startswith("CYCL DEF 7.") and not block.startswith("CYCL DEF 7.0"):
+                word = block.split()[3]
+                shift["XYZ".index(word[0])] = float(word[1:])
+            elif block.startswith("CYCL DEF 247") or block.startswith("M30"):
+                self.assertEqual(shift, [0.0, 0.0, 0.0], "a shift left on at: " + block)
+            elif block.startswith("*- Contourbewerking"):
+                operation += 1
+            elif block.startswith("L ") and any(w[0] in "XY" for w in block.split()[1:]) and "M91" not in block:
+                # a move in the plane (the lifts in Z only go up on the preset)
+                under.setdefault(operation, set()).add(tuple(shift))
+        self.assertEqual(operation + 1, len(expected))
+        for k, origin in enumerate(expected):
+            self.assertEqual(under[k], {origin}, "operation {}".format("ABCDEFGHI"[k]))
+
     def test_turned_zero_point_is_refused(self):
         with self.assertRaisesRegex(ValueError, "Contour counts from a turned zero point .A\\+0 B\\+90 C\\+0.*BRIDGEPORT V1000"):
             heidenhain.write(program(contour("Contour", zero=RIGHT)))
