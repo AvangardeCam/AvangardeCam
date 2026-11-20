@@ -20,8 +20,11 @@ import traceback
 import FreeCAD
 import FreeCADGui
 import avangardecam
+from avangardecam import edition
 from PySide import QtCore, QtGui, QtWidgets
 
+# what the window says when the circle's axis is not along Z (main has no 5 axes)
+HINT = "tick 5 axes" if edition.FIVE_AXES else "Z stays as it is"
 OUT = os.environ.get("AC_TEST_OUT", tempfile.gettempdir())
 LOG = open(os.path.join(OUT, "test_circle_zero.txt"), "w")
 FAILURES = []
@@ -287,7 +290,7 @@ def step4():
     check(turn() == (0.0, 0.0, 0.0), "no turn without 5 axes")
     check(not part("Circle").isChecked(), "Select circle released")
     check(text().startswith("{} of {}: the middle of Ø40".format(bore, body().Label)), "the circle named: {}".format(text()))  # fmt: skip
-    check("tick 5 axes" in text(), "its axis is not along Z: the window says so")
+    check(HINT in text(), "its axis is not along Z: the window says so: {}".format(text()))
     check(selected() == [], "the circle is not left selected: {}".format(selected()))
     check(zero() == (0.0, 0.0, 50.0), "the zero point waits for OK")
     check(ui().preview_shown(job()), "where it would be is drawn")
@@ -295,7 +298,7 @@ def step4():
     part("5X").setChecked(True)
     QtWidgets.QApplication.processEvents()
     check(turn() == (90.0, 0.0, 0.0), "5 axes ticked after the pick: Z turns out of the end then: {}".format(turn()))
-    check("tick 5 axes" not in text(), "and the word of 5 axes is gone: {}".format(text()))
+    check(HINT not in text(), "and the word of 5 axes is gone: {}".format(text()))
     part("5X").setChecked(False)
     part("5X").setChecked(True)
     check(turn() == (90.0, 0.0, 0.0), "again the same")
@@ -372,7 +375,11 @@ def step7():
 @safe
 def step8():
     check(window() is not None, "the window opens with the hole's wall selected")
-    check(part("5X").isChecked() and part("Turn").isVisible(), "5 axes is still ticked")
+    if edition.FIVE_AXES:
+        check(part("5X").isChecked() and part("Turn").isVisible(), "5 axes is still ticked")
+    else:
+        check(not part("5X").isChecked() and not part("5X").isVisible(), "without 5 axes in this version: not ticked, remembered or not")  # fmt: skip
+        part("5X").setChecked(True)  # the rest as with 5 axes (the same code under it)
     check(part("ZOut").isChecked(), "and Z out of the model")
     check(shift() == (35.0, 0.0, 0.0), "taken at once: its mouth, from the turned zero point: {}".format(shift()))
     check(turn() == (0.0, 0.0, 0.0), "the tool stands along it already: {}".format(turn()))

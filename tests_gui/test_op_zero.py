@@ -406,7 +406,10 @@ def step7():
 
 @safe
 def step8():
-    check(part("5X").isChecked(), "Move 0-Point again: 5 axes still ticked (kept for 5-axis work)")
+    if edition.FIVE_AXES:
+        check(part("5X").isChecked(), "Move 0-Point again: 5 axes still ticked (kept for 5-axis work)")
+    else:
+        check(not part("5X").isChecked(), "Move 0-Point again: without 5 axes in this version not ticked, remembered or not")  # fmt: skip
     check(tuple(window().turn()) == (0.0, 0.0, 0.0), "no turn before a pick: {}".format(window().turn()))
     part("X").setProperty("rawValue", 5.0)
     window().accept()

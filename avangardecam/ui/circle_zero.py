@@ -13,7 +13,7 @@ point's Z also turns along the circle's axis, out of the part.
 import FreeCAD
 import FreeCADGui
 
-from avangardecam import tr
+from avangardecam import edition, tr
 from avangardecam.engine import circle_zero as engine
 from avangardecam.engine import freecad_cam as cam
 from avangardecam.model import circle_zero as model
@@ -63,6 +63,8 @@ def picked_text(obj, sub, found):
 def tilt_hint():
     """Said after picked_text when the circle's axis is not along Z and the
     zero point does not turn (no 5 axes)."""
+    if not edition.FIVE_AXES:
+        return tr("Its axis is not along Z: the zero point moves to its middle, Z stays as it is.")
     return tr("Its axis is not along Z: tick 5 axes to turn Z out of the part along it.")
 
 

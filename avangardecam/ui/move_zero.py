@@ -276,7 +276,7 @@ class MoveZeroDialog(QtWidgets.QDialog):
             self.turn_boxes.append(box)
         turn_layout.addLayout(turn_form)
         layout.addWidget(self.turn_group)
-        on = params().GetBool(_LAST_5_AXES, False)
+        on = edition.FIVE_AXES and params().GetBool(_LAST_5_AXES, False)
         self.five_axes.setChecked(on)
         self.turn_group.setVisible(on)
         self.five_axes.toggled.connect(self._five_axes_toggled)
