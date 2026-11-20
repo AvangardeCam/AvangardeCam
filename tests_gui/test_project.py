@@ -211,11 +211,8 @@ def step7():
     log("  dialog message:", d.message.text())
     job = cam().find_job(FreeCAD.ActiveDocument)
     check([t.number for t in cam().project_tools(job)] == [5, 40], "T5 and T40 in the project")
-    row = next(r for r, e in enumerate(d.shown) if e.id == T5_ALU)
-    check(
-        not (d.table.item(row, 0).flags() & QtCore.Qt.ItemIsSelectable),
-        "the variant in the project cannot be added twice",
-    )
+    d.select_ids({T5_ALU})
+    check(not d.add_button.isEnabled(), "the variant in the project cannot be added twice")
     rvs_row = next(r for r, e in enumerate(d.shown) if e.id == T40_RVS)
     check(d.table.item(rvs_row, 1).font().italic(), "other T40 variants are marked")
 

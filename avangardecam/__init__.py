@@ -51,11 +51,18 @@ def image_path(name):
     return os.path.join(_MOD_DIR, "Resources", "images", name)
 
 
+def shipped_tool_library_path():
+    """The library shipped with the module (the shop's tool table); an
+    update of the module replaces it, so tools are edited in a copy
+    (engine.tool_library_file)."""
+    return os.path.join(_MOD_DIR, "Resources", "library", "tools.json")
+
+
 def tool_library_path():
     """The shop's tool library file: the ToolLibraryFile parameter, or the
-    library shipped with the module (the shop's tool table)."""
+    library shipped with the module."""
     path = params().GetString("ToolLibraryFile", "")
-    return path or os.path.join(_MOD_DIR, "Resources", "library", "tools.json")
+    return path or shipped_tool_library_path()
 
 
 def tr(text):

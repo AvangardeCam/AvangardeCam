@@ -189,6 +189,11 @@ cat /tmp/ac.txt
   values; OK keeps the own ones on the operation (the details, the program: a whole TOOL CALL with
   the own speed, Q31 the own feed; the tool keeps its own), Edit... shows them (one undo step),
   Change tool... drops them; the drilling window names its feeds Q206 and Q253.
+- `test_tool_editing.py`: the tool library's New tool..., Edit..., Duplicate..., Delete: a new
+  tool with the lowest free T number, the type's drawing and fields (a bull nose: Corner radius
+  (R)), OK with nothing filled in says what is missing, filled in saved into the user's own copy
+  of the library (the shipped one untouched) and selected; Edit... of T21 in the project changes it
+  there too; Duplicate... for another material lists the other T21 tools; Delete.
 - `test_facing.py`: CAM > Facing with nothing clicked only says what to click; the top face
   clicked: the window (its picture beside the fields, the face, Start Z from the top of the stock, the Z levels, no tool: OK
   refused, a drill refused, T5: 4.2 mm step over and 5 passes, the face mill T16 Ø50: 1 pass, its

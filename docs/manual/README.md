@@ -94,6 +94,19 @@ Click **Stock** on the ribbon. The stock is the model's box plus an allowance on
 
 When the part is machined from a casting, a sawn block or a blank machined before, click **Custom stock** on the ribbon (also **Custom stock...** in the Stock window and in the stock's details) and choose its STEP, IGES, BREP or STL file. **Put the middle of the stock in the middle of the model** (ticked at first) moves the blank so that the middle of its box is on the middle of the model's box: the file may draw it anywhere. A blank the file already draws around the model stays there (the foundry's allowances where it put them, e.g. only under the part). Unticked, it always stays where the file draws it, in the part's coordinates. The blank is only moved, never turned: if the model sticks out of it (a blank too small, or lying the other way), a message says by how much on which side. The details show the file and where the blank's middle is; **Put in the middle** puts it there later. A right click on the stock in the list opens its menu: **Move stock...** moves the blank along X, Y and Z of the setup, **Put in the middle**, **Custom stock...**, **Stock...**. **Replace by box with allowances** goes back to a box. Simulate and Verify start from the blank's material.
 
+### Tool library
+
+**Tool library** on the ribbon lists the shop's tools, each T number once per workpiece material (its own spindle speed and feeds). **Add to project** puts the selected tools into the active setup. Under the table:
+
+- **New tool...** opens an empty tool with the lowest free T number. Choose its **Type**: the window shows FreeCAD's drawing of it and only its fields, named with the drawing's letters (Diameter (D), Corner radius (R), Cutting length (H), Length out of the holder (L), Shank diameter (S), ...). Fill in the spindle speed and both feeds; Vc and fz are worked out beside them. **OK** says what is missing or wrong and keeps the window open.
+- **Edit...** changes the selected tool. When the open project has it, AvangardeCam asks whether to change it there too: its operations get the new geometry, spindle speed and feeds (an operation's own speed and feeds stay).
+- **Duplicate...** copies the selected tool, e.g. for another workpiece material under the same T number. The window lists the other tools of the library under that number.
+- **Delete** takes the selected tool out of the library; a project keeps its own copy.
+
+The library shipped with AvangardeCam is replaced by every update, so the first change copies it into your own file in FreeCAD's user folder (`AvangardeCam/tools.json`), used from then on. A library opened with **Open other library...** is changed where it is.
+
+**Tools from your old program.** The library is a plain JSON file: its format is described at the top of `avangardecam/model/library.py`, and `Resources/library/tools.json` is a full example. An AI coding assistant such as Claude Code can probably turn your old program's tool table (its export, a CSV or a spreadsheet) into this format quickly: give it your table and these two files and ask for an AvangardeCam tool library. Open the result with **Open other library...**; a file that cannot be read is refused with the reason. Check a few tools (diameter, lengths, spindle speed and feeds) before you cut with them: **Edit...** and **OK** on a tool also says what is wrong with it.
+
 ---
 
 ## 3. Drilling from the 3D model

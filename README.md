@@ -47,7 +47,11 @@ own work better and easier. The code is built for it: small modules, tests, a cl
 - **Simulation:** Simulate window with the stock removed live and the program line by line,
   Verify (stock against the model), collisions of rapid moves, holder and neck.
 - **Cycle time** from the machine's dynamics.
-- **Tool library** with feeds and speeds per material.
+- **Tool library** with feeds and speeds per material: add, edit, duplicate and delete tools
+  (kept in your own file, not replaced by an update); every operation may change the speed
+  and feeds of its tool for itself. The library is a plain JSON file, so an AI assistant such
+  as Claude Code can probably turn your old program's tool table into it quickly
+  ([manual](docs/manual/README.md#tool-library)).
 - **Postprocessor:** Heidenhain **TNC 620** plain language (`.H`), every setup on its own preset.
   Made for and tested on a **Bridgeport V1000 with a TNC 620** (control dialog in Dutch, e.g.
   `CYCL DEF 247 REF.PUNT VASTL.`). Other Heidenhain controls (TNC 640, 530, ...) and other

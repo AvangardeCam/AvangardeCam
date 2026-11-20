@@ -125,6 +125,16 @@ spindle speed is a tool call (`post/heidenhain._calls`, `model/machine.py`). The
 `ui/cutting_data.py`, under the tool of `ui/tool_choice.ToolChooser`; the handlers keep them on
 OK (`handlers._keep_cutting_data`), Change tool drops them.
 
+### Editing the tool library
+
+`model/tool_editing.py` has the fields of each tool type (named with the letters of FreeCAD's
+drawings, `Mod/CAM/Tools/Shape/*.svg`), the checks before a tool is saved and the changes of
+the list (ids kept: a project knows its tools by them). `engine/tool_library_file.py` writes to
+the user's copy of the shipped library (`<user data>/AvangardeCam/tools.json`, made on the first
+change; the `ToolLibraryFile` parameter points there) and makes a project's tools again from
+an edited one (`freecad_cam.replace_tool`). The window is `ui/tool_editor.py`, opened from
+`ui/tool_library.py`.
+
 ## Simulation and checking
 
 - `stocklab/`: material removal on a tri-dexel grid (numpy, no FreeCAD), used by **Play**
