@@ -337,13 +337,16 @@ TABS = (
                 "output",
                 _t("Output"),
                 (
+                    # the user's choice (2026-11-19): AvangardeCam's own
+                    # simulation is the large Simulate, FreeCAD's simulator
+                    # the small button where Play was
                     Action(
-                        "cam_simulate",
+                        "cam_play",
                         _t("Simulate"),
-                        "CAM_SimulatorGL",
+                        "AvangardeCam_Play",
                         LARGE,
-                        tip=_t("The active setup's operations machining its stock"),
-                        handler="simulate",
+                        tip=_t("The active setup's program played as the machine runs it, in a window of its own: the stock cut, the tool, its path, the program's lines and the time, block by block or at a speed"),  # fmt: skip
+                        handler="play",
                     ),
                     Action(
                         "cam_verify",
@@ -360,11 +363,11 @@ TABS = (
                         handler="cycle_time",
                     ),
                     Action(
-                        "cam_play",
-                        _t("Play"),
-                        "AvangardeCam_Play",
-                        tip=_t("The active setup's program played as the machine runs it, in a window of its own: the stock cut, the tool, its path, the program's lines and the time, block by block or at a speed"),  # fmt: skip
-                        handler="play",
+                        "cam_simulate",
+                        _t("FreeCAD sim"),
+                        "CAM_SimulatorGL",
+                        tip=_t("FreeCAD's simulator: the active setup's operations machining its stock"),
+                        handler="simulate",
                     ),
                     Action(
                         "cam_export_gcode",

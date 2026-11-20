@@ -1,5 +1,5 @@
 # Simulation window GUI test: two contours on the top's boundary, the
-# second with another tool. CAM > Play opens the simulation in a window of
+# second with another tool. CAM > Simulate (handlers.play) opens the simulation in a window of
 # its own (the project's view untouched: the operations' paths stay):
 # its 3D view, the operations with their times, the whole program with the
 # line the machine runs, the time line and the buttons. The whole time is

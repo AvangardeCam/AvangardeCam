@@ -60,7 +60,7 @@ CHECK_STYLE = "color: #c0392b; font-weight: bold;"
 
 def check_note():
     """The warning shown with every Adaptive: it is not yet reliable."""
-    return tr("Attention: check that Adaptive works well. Look at its path in Play or Verify before cutting: is everything cleared, does the tool go only where it should?")  # fmt: skip
+    return tr("Attention: check that Adaptive works well. Look at its path in Simulate or Verify before cutting: is everything cleared, does the tool go only where it should?")  # fmt: skip
 
 
 def check_label(parent=None):

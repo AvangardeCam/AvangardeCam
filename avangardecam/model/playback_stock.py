@@ -29,6 +29,7 @@ Plain Python with numpy, no FreeCAD.
 
 import bisect
 import math
+import time
 from typing import NamedTuple, Optional
 
 import numpy as np
@@ -53,6 +54,9 @@ PIECE_CUBES = 32
 # stock model takes an arc ending where it starts for a whole circle
 _ARC_PIECE_MM = 1e-3
 _SAME = 1e-9
+# cutting against a deadline (Material.cut_to(t, seconds)): at most this
+# many chords at once
+_MOST_BATCH = 4096
 
 
 def _piece(segment, a, b):
@@ -75,6 +79,25 @@ def _stock_move(segment):
     if not whole and chord <= _ARC_PIECE_MM:
         return stocklab.Line(segment.start, segment.end, rapid=False)
     return stocklab.Arc(segment.start, segment.end, (cx, cy, 0.0), ccw=not segment.clockwise)
+
+
+def _chords(move, tolerance):
+    """About how many straight pieces the stock model cuts a move as
+    (cut.arc_points): what it costs, a line 1."""
+    if not isinstance(move, stocklab.Arc):
+        return 1
+    cx, cy = float(move.center[0]), float(move.center[1])
+    x0, y0 = float(move.start[0]) - cx, float(move.start[1]) - cy
+    x1, y1 = float(move.end[0]) - cx, float(move.end[1]) - cy
+    radius = max(math.hypot(x0, y0), math.hypot(x1, y1))
+    if radius <= tolerance:
+        return 1
+    turn = math.atan2(y1, x1) - math.atan2(y0, x0)
+    turn = turn % (2.0 * math.pi) if move.ccw else (-turn) % (2.0 * math.pi)
+    if turn < 1e-12:
+        turn = 2.0 * math.pi
+    step = 2.0 * math.acos(max(1.0 - tolerance / radius, -1.0))
+    return max(1, int(math.ceil(turn / step)))
 
 
 class Material:
@@ -119,9 +142,12 @@ class Material:
     def cell_mm(self):
         return float(self.stock.spacing.max())
 
-    def cut_to(self, t):
+    def cut_to(self, t, seconds=None):
         """The stock as it is at time t (cut on from where it was, or
-        again from a copy kept before t)."""
+        again from a copy kept before t). seconds: going on, stop cutting
+        after about this long, at the end of a segment (a player that
+        must not stop for long: it goes on from self.t, the time cut up
+        to, next time); None: all the way to t."""
         line = self.line
         t = min(max(t, 0.0), line.total_s)
         back = t < self.t - _SAME
@@ -137,7 +163,8 @@ class Material:
                     self._count_in(cells)
             self._history = [h for h in self._history if h[0] < self.t - _SAME]
         if t > self.t + _SAME:
-            self._cut(self.t, t)
+            deadline = None if seconds is None else time.monotonic() + seconds
+            t = self._cut(self.t, t, deadline)
             cells = self.stock.changed_cells()
             if cells is not None:
                 self._history.append((self.t, t, cells))
@@ -166,14 +193,23 @@ class Material:
             return False, {}
         return False, stocklab.mesh.pieces(self.stock, PIECE_CUBES, cells)
 
-    def _cut(self, t0, t1):
+    def _cut(self, t0, t1, deadline=None):
+        """Cut from time t0 to t1; returns the time cut up to: t1, or with
+        a deadline (time.monotonic) the end of the segment where it went
+        past it. Then the moves are cut a few at a time, as many chords
+        (_chords: a helix costs as many lines as it has chords) as the time
+        left should take by the last few, the first time one move, never
+        more than four times the chords before."""
         line = self.line
         if not line.segments:
-            return
+            return t1
         i = max(int(np.searchsorted(line.starts, t0, side="right")) - 1, 0)
         # moves of one tool on one zero point waiting to be cut, their first segment
         pending, tool, zero = [], None, None
         first_pending = i
+        batch = 1  # chords
+        weight = 0  # the chords of the moves waiting
+        tolerance = CHORD * self.stock.spacing.min()
         while i < len(line.segments) and line.starts[i] < t1 - _SAME:
             start, duration = float(line.starts[i]), float(line.durations[i])
             if duration > _SAME:
@@ -185,22 +221,36 @@ class Material:
                 number = self._tool_of[i]
                 if (number != tool or line.zero_of[i] is not zero) and pending:
                     self._flush(pending, tool, first_pending, zero)
-                    pending = []
+                    pending, weight = [], 0
                 if not pending:
                     first_pending = i
                 tool, zero = number, line.zero_of[i]
                 move = _stock_move(_piece(line.segments[i], a, b))
                 if move is not None:
                     pending.append((i, move))
+                    if deadline is not None:
+                        weight += _chords(move, tolerance)
             done = b >= 1.0 - _SAME
             if done and (i + 1) % self._every == 0 and (i + 1) not in self._kept:
                 self._flush(pending, tool, first_pending, zero)
-                pending = []
+                pending, weight = [], 0
                 self._kept[i + 1] = self.stock.copy()
             if not done:
                 break
+            if deadline is not None and pending and weight >= batch:
+                began = time.monotonic()
+                count = weight
+                self._flush(pending, tool, first_pending, zero)
+                pending, weight = [], 0
+                now = time.monotonic()
+                end = float(line.starts[i] + line.durations[i])
+                if now >= deadline and end < t1 - _SAME:
+                    return end
+                each = max((now - began) / count, 1e-6)
+                batch = int(min(max((deadline - now) / each / 2.0, 1), 4 * count, _MOST_BATCH))
             i += 1
         self._flush(pending, tool, first_pending, zero)
+        return t1
 
     def _flush(self, pending, tool, first, zero=None):
         """Cut the moves of one tool waiting (counted from zero), all at

@@ -15,7 +15,7 @@ Nazwy przycisków i pól są takie jak w programie (po angielsku).
 3. [Wiercenie z modelu 3D](#3-wiercenie-z-modelu-3d)
 4. [Facing — planowanie](#4-facing--planowanie)
 5. [Lista operacji](#5-lista-operacji)
-6. [Symulacja — Play](#6-symulacja--play)
+6. [Symulacja — Simulate](#6-symulacja--simulate)
 7. [Adaptive clearing](#7-adaptive-clearing)
 8. [Szkic z krawędzi i wybór linii](#8-szkic-z-krawędzi-i-wybór-linii)
 9. [Contour tooling](#9-contour-tooling)
@@ -35,7 +35,7 @@ Nazwy przycisków i pól są takie jak w programie (po angielsku).
   - **Measure:** pomiary;
   - **Milling:** Contour tooling, Facing, Adaptive…;
   - **Holes:** Drilling, Helix, Thread milling;
-  - **Output:** Simulate, Verify, Cycle time, Play, Export NC.
+  - **Output:** Simulate, Verify, Cycle time, FreeCAD sim, Export NC.
 - **Drzewo projektu** (po lewej): Model, Sketches, a w każdym Setupie Stock, Tools i Operations.
 - **Details** (pod drzewem): opis zaznaczonego elementu. Najważniejsze pola można tu zmienić bez otwierania okna.
 - **Widok 3D:** kliknięcie zaznacza ściany, krawędzie i linie szkiców. Czerwona linia to ścieżka narzędzia zaznaczonej operacji.
@@ -75,7 +75,7 @@ Snap-0-Point i Rotate 0-Point przestawiają całe mocowanie (domyślne zero raze
 
 Widok 3D, kostka nawigacji i widoki Top / Front / Right zawsze idą za aktywnym zerem.
 
-**Play, Verify i Cycle time** puszczają każdą operację z jej własnego zera: narzędzie jest rysowane pochylone tak jak to zero, stock jest zbierany z tej strony, a Verify sprawdza każdą operację z detalem. Gdy jakaś operacja jest na obróconym zerze, puszczany jest program maszyny z pochylaniem (Play pokazuje listę tego programu); inaczej program maszyny wybranej przy ostatnim eksporcie. Drogi obracanej głowicy między operacjami nie ma w programie, więc nie jest rysowana ani liczona do czasu cyklu.
+**Simulate, Verify i Cycle time** puszczają każdą operację z jej własnego zera: narzędzie jest rysowane pochylone tak jak to zero, stock jest zbierany z tej strony, a Verify sprawdza każdą operację z detalem. Gdy jakaś operacja jest na obróconym zerze, puszczany jest program maszyny z pochylaniem (Play pokazuje listę tego programu); inaczej program maszyny wybranej przy ostatnim eksporcie. Drogi obracanej głowicy między operacjami nie ma w programie, więc nie jest rysowana ani liczona do czasu cyklu.
 
 
 ### Stock
@@ -95,7 +95,7 @@ Zmiany zapisuje **OK**. W przykładzie stock ma 74,20 × 50,22 × 15,20 mm.
 
 ### Custom stock (własny stock z pliku)
 
-Gdy detal robisz z odlewu, ciętego klocka albo surówki obrobionej wcześniej, kliknij **Custom stock** na wstążce (jest też **Custom stock...** w oknie Stock i w Details stocka) i wybierz jego plik STEP, IGES, BREP lub STL. **Put the middle of the stock in the middle of the model** (domyślnie zaznaczone) przesuwa surówkę tak, że środek jej obrysu trafia na środek obrysu modelu — plik może ją rysować gdziekolwiek. Surówka, którą plik już rysuje wokół detalu, zostaje na miejscu (naddatki tam, gdzie dała je odlewnia, np. tylko od spodu). Bez zaznaczenia zawsze zostaje tam, gdzie narysowano ją w pliku (w układzie detalu). Surówka jest tylko przesuwana, nigdy obracana: jeśli model z niej wystaje (za mała albo leży w inną stronę), komunikat mówi, o ile i z której strony. Details pokazują plik i gdzie jest środek surówki; **Put in the middle** ustawia ją na środku później. Prawy klik na Stock w liście otwiera menu: **Move stock...** przesuwa surówkę po osiach X, Y, Z mocowania, **Put in the middle**, **Custom stock...**, **Stock...**. **Replace by box with allowances** wraca do pudełka. Play i Verify zaczynają od materiału surówki.
+Gdy detal robisz z odlewu, ciętego klocka albo surówki obrobionej wcześniej, kliknij **Custom stock** na wstążce (jest też **Custom stock...** w oknie Stock i w Details stocka) i wybierz jego plik STEP, IGES, BREP lub STL. **Put the middle of the stock in the middle of the model** (domyślnie zaznaczone) przesuwa surówkę tak, że środek jej obrysu trafia na środek obrysu modelu — plik może ją rysować gdziekolwiek. Surówka, którą plik już rysuje wokół detalu, zostaje na miejscu (naddatki tam, gdzie dała je odlewnia, np. tylko od spodu). Bez zaznaczenia zawsze zostaje tam, gdzie narysowano ją w pliku (w układzie detalu). Surówka jest tylko przesuwana, nigdy obracana: jeśli model z niej wystaje (za mała albo leży w inną stronę), komunikat mówi, o ile i z której strony. Details pokazują plik i gdzie jest środek surówki; **Put in the middle** ustawia ją na środku później. Prawy klik na Stock w liście otwiera menu: **Move stock...** przesuwa surówkę po osiach X, Y, Z mocowania, **Put in the middle**, **Custom stock...**, **Stock...**. **Replace by box with allowances** wraca do pudełka. Simulate i Verify zaczynają od materiału surówki.
 
 ---
 
@@ -164,9 +164,9 @@ Facing zdejmuje naddatek z góry całego stocku, aż do górnej ściany modelu.
 
 ---
 
-## 6. Symulacja — Play
+## 6. Symulacja — Simulate
 
-Kliknij **Play**. Program aktywnego Setupu jest odtwarzany tak, jak wykona go maszyna: materiał ubywa na żywo.
+Kliknij **Simulate**. Program aktywnego Setupu jest odtwarzany tak, jak wykona go maszyna: materiał ubywa na żywo.
 
 ![Okno symulacji](images/09_play.jpg)
 
@@ -184,7 +184,7 @@ Kliknij **Play**. Program aktywnego Setupu jest odtwarzany tak, jak wykona go ma
 Adaptive usuwa materiał zgrubnie, ze stałym obciążeniem narzędzia: mały odstęp boczny i głębokie przejścia. Nigdy nie wcina się w model.
 
 > **Sprawdź, czy Adaptive działa dobrze.** Okno i Details mówią to na czerwono: przed
-> obróbką obejrzyj ścieżkę w **Play** albo **Verify**. Czy wszystko jest zebrane i czy
+> obróbką obejrzyj ścieżkę w **Simulate** albo **Verify**. Czy wszystko jest zebrane i czy
 > narzędzie jedzie tylko tam, gdzie powinno?
 
 1. Bez zaznaczania niczego kliknij **Adaptive**: obrabiany jest obszar wokół całego modelu.
@@ -346,10 +346,10 @@ Symulacja Setup 2 zaczyna od materiału, który został po Setup 1:
 
 | Przycisk | Co robi |
 | --- | --- |
-| **Simulate** | Operacje aktywnego Setupu obrabiają jego stock. |
+| **Simulate** | Odtwarzanie programu jak na maszynie (rozdział 6). |
 | **Verify** | Program aktywnego Setupu wycięty ze stocku. Na czerwono: za głęboko w detal. Na niebiesko: zostawiony materiał. Pokazuje też szybkie ruchy w materiale. |
 | **Cycle time** | Czas każdej operacji i Setupu w tabeli, liczony z dynamiki maszyny. |
-| **Play** | Odtwarzanie programu jak na maszynie (rozdział 6). |
+| **FreeCAD sim** | Symulator FreeCADa: operacje aktywnego Setupu obrabiają jego stock. |
 | **Export NC** | Program Heidenhain (`.H`), każdy Setup na własnym presecie. Maszynę wybierasz jako typ pliku w oknie eksportu. |
 
 > Postprocesor **Bridgeport V1000** (TNC 620) jest zrobiony i sprawdzony na tej maszynie. Przy innej maszynie dokładnie sprawdź pierwsze programy. Przesunięte zero pisze jako przesunięcie punktu zerowego (`CYCL DEF 7`, eksperymentalnie), a obróconego odmawia.

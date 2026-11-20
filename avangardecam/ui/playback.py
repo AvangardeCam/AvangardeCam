@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 # AvangardeCam - a clear CAD/CAM interface that drives FreeCAD.
-"""CAM > Play: the active setup's program played as the machine runs it,
-in a window of its own (user, 2026-10-28: the project's view stays as it
-is; the window can be maximized or put on a second screen).
+"""CAM > Simulate (the large button; Play before 2026-11-19): the active
+setup's program played as the machine runs it, in a window of its own
+(user, 2026-10-28: the project's view stays as it is; the window can be maximized or put on a second screen).
 
 - its own 3D view (ui.coin_view) in the setup's coordinates: the stock as
   the machine leaves it (model.playback_stock, cut while it plays), the
@@ -68,6 +68,10 @@ MESH_MS = 100  # the stock drawn again at most this often while it plays
 # a frame plays at most this much of the real time: a computer too slow for
 # the speed plays slower instead of jumping (and cutting ever more at once)
 _MOST_FRAME_S = 0.1
+# while it plays the stock is cut for at most this long at a time (s): a
+# stretch costing more (a helix of many turns at Fine) plays slower instead
+# of the window stopping until it is cut (which made the next stretch longer)
+PLAY_CUT_S = 0.12
 _WINDOW_SHARE = 0.8  # of the screen
 STOCK_COLOR = (0.62, 0.68, 0.78)
 PART_COLOR = (0.25, 0.75, 0.35)
@@ -488,6 +492,7 @@ class SimulationWindow(QtWidgets.QMainWindow):
         self._material_at = None  # the time the stock is drawn at
         self._material_drawn = 0.0  # monotonic time of the last drawing
         self.mesh_ms = 0.0  # how long the last drawing took
+        self.behind = False  # playing: the stock could not be cut up to the time in PLAY_CUT_S
         self._line_shown = 0.0  # monotonic time the program's line was last selected
         self.crashes = []  # model.playback_stock.PlayedCrash found so far, in time order
         self.timer = QtCore.QTimer(self)
@@ -717,21 +722,29 @@ class SimulationWindow(QtWidgets.QMainWindow):
         self._material_at = None
         self._forget_crashes()
 
-    def _draw_material(self):
-        """The stock as it is at the player's time, drawn."""
-        if self.material is None or self._material_at == self.t:
+    def _draw_material(self, t=None):
+        """The stock as it is at the player's time (or at t, ahead of it),
+        drawn. While it plays the stock is cut for at most PLAY_CUT_S: when
+        that does not get to the time, the player stays where the stock
+        got (`behind`) and goes on from there, slower than its speed but
+        never stopping for long (a helix of many turns at Fine)."""
+        t = self.t if t is None else t
+        if self.material is None or self._material_at == t:
             return
         busy = not self.playing
         if busy:
             QtWidgets.QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
         try:
             began = time.monotonic()
-            self.material.cut_to(self.t)
+            self.material.cut_to(t, PLAY_CUT_S if self.playing else None)
             self.scene.set_stock(*self.material.changed_pieces())
             self.mesh_ms = (time.monotonic() - began) * 1000.0
         finally:
             if busy:
                 QtWidgets.QApplication.restoreOverrideCursor()
+        self.behind = self.playing and self.material.t < t - 1e-9
+        if self.material.t != self.t:
+            self.show_time(self.material.t)
         self._material_at = self.t
         self._material_drawn = time.monotonic()
         self.material_label.setText(tr("cell {:.2f} mm, drawn in {:.0f} ms").format(self.material.cell_mm, self.mesh_ms))
@@ -810,8 +823,14 @@ class SimulationWindow(QtWidgets.QMainWindow):
         self.timer.start()
         self.play_button.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_MediaPause))
 
-    def pause(self):
+    def pause(self, wait=False):
+        """Stop playing. The tool stays where the stock is cut up to (a
+        little behind while it played fast: no waiting for the rest);
+        wait: where it is, the stock cut up to it."""
+        if self.playing and not wait and self.material is not None and self.material.t < self.t - 1e-9:
+            self.show_time(self.material.t)
         self.playing = False
+        self.behind = False
         self.timer.stop()
         self.play_button.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_MediaPlay))
         index = self.timeline.step_at(self.t)
@@ -830,16 +849,27 @@ class SimulationWindow(QtWidgets.QMainWindow):
             self.close()
             return
         now = time.monotonic()
-        t = self.t + min(now - self._clock, _MOST_FRAME_S) * self.speed
+        total = self.timeline.total_s
+        t = min(self.t + min(now - self._clock, _MOST_FRAME_S) * self.speed, total)
         self._clock = now
         crash = next((c for c in self.crashes if self.t < self.timeline.steps[c.step].end_s <= t), None)
         if crash is not None:  # found before: it stops there
             self.show_time(self.timeline.steps[crash.step].end_s)
-            self.pause()
+            self.pause(wait=True)
             self._show_crash(crash)
             return
-        if t >= self.timeline.total_s:
-            self.show_time(self.timeline.total_s)
+        material = self.material
+        if material is not None and (self.behind or t - material.t > self.speed * MESH_MS / 1000.0 or t >= total):
+            # the stock sets the pace: cut on for at most PLAY_CUT_S, the
+            # tool where the stock got (never further ahead of it than it
+            # plays between two drawings, so stopping never waits long)
+            self._draw_material(t)
+            self._clock = time.monotonic()
+            if self.playing and self.material is material and material.t >= total - 1e-9:
+                self.pause()
+            return
+        if t >= total:
+            self.show_time(total)
             self.pause()
             return
         self.show_time(t)

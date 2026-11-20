@@ -144,7 +144,7 @@ def material(job):
 
 def simulator_stock(job):
     """The stock of a setup starting from a mesh as FreeCAD's simulator
-    takes it (CAM > Simulate), in the setup's coordinates: the mesh made
+    takes it (CAM > FreeCAD sim), in the setup's coordinates: the mesh made
     coarser (SIMULATOR_TRIANGLES), as faces. None when the Job's stock is
     the material (a box, a blank from a STEP file)."""
     if kind(job) not in (FROM_SETUP, CUSTOM) or not _is_mesh(source(job)):

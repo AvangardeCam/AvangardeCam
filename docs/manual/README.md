@@ -13,7 +13,7 @@ two counterbores for screw heads and four M6 holes, machined in two clampings.
 3. [Drilling from the 3D model](#3-drilling-from-the-3d-model)
 4. [Facing](#4-facing)
 5. [The operation list](#5-the-operation-list)
-6. [Simulation — Play](#6-simulation--play)
+6. [Simulation — Simulate](#6-simulation--simulate)
 7. [Adaptive clearing](#7-adaptive-clearing)
 8. [A sketch from the edges and picking lines](#8-a-sketch-from-the-edges-and-picking-lines)
 9. [Contour tooling](#9-contour-tooling)
@@ -33,7 +33,7 @@ two counterbores for screw heads and four M6 holes, machined in two clampings.
   - **Measure:** measuring;
   - **Milling:** Contour tooling, Facing, Adaptive…;
   - **Holes:** Drilling, Helix, Thread milling;
-  - **Output:** Simulate, Verify, Cycle time, Play, Export NC.
+  - **Output:** Simulate, Verify, Cycle time, FreeCAD sim, Export NC.
 - **Project tree** (left): Model, Sketches, and in each Setup its Stock, Tools and Operations.
 - **Details** (under the tree): what the selected item is. The main fields can be changed here without opening its window.
 - **3D view:** a click selects faces, edges and sketch lines. The red line is the tool path of the selected operation.
@@ -73,7 +73,7 @@ The **stock has a zero point of its own**: the default one. It is one block, whe
 
 The 3D view, its navigation cube and the Top / Front / Right views always follow the zero point that is active.
 
-**Play, Verify and Cycle time** run every operation from its own zero point: the tool is drawn tilted as that zero point is, the stock is cut from that side, and Verify checks each operation against the part there. When an operation is on a turned zero point they run the program of the machine that tilts (Play lists that program); otherwise the program of the machine chosen in the last export. The way of a turning head between two operations is not in the program, so it is not drawn and not in the cycle time.
+**Simulate, Verify and Cycle time** run every operation from its own zero point: the tool is drawn tilted as that zero point is, the stock is cut from that side, and Verify checks each operation against the part there. When an operation is on a turned zero point they run the program of the machine that tilts (Play lists that program); otherwise the program of the machine chosen in the last export. The way of a turning head between two operations is not in the program, so it is not drawn and not in the cycle time.
 
 ### Stock
 
@@ -92,7 +92,7 @@ Click **Stock** on the ribbon. The stock is the model's box plus an allowance on
 
 ### Custom stock
 
-When the part is machined from a casting, a sawn block or a blank machined before, click **Custom stock** on the ribbon (also **Custom stock...** in the Stock window and in the stock's details) and choose its STEP, IGES, BREP or STL file. **Put the middle of the stock in the middle of the model** (ticked at first) moves the blank so that the middle of its box is on the middle of the model's box: the file may draw it anywhere. A blank the file already draws around the model stays there (the foundry's allowances where it put them, e.g. only under the part). Unticked, it always stays where the file draws it, in the part's coordinates. The blank is only moved, never turned: if the model sticks out of it (a blank too small, or lying the other way), a message says by how much on which side. The details show the file and where the blank's middle is; **Put in the middle** puts it there later. A right click on the stock in the list opens its menu: **Move stock...** moves the blank along X, Y and Z of the setup, **Put in the middle**, **Custom stock...**, **Stock...**. **Replace by box with allowances** goes back to a box. Play and Verify start from the blank's material.
+When the part is machined from a casting, a sawn block or a blank machined before, click **Custom stock** on the ribbon (also **Custom stock...** in the Stock window and in the stock's details) and choose its STEP, IGES, BREP or STL file. **Put the middle of the stock in the middle of the model** (ticked at first) moves the blank so that the middle of its box is on the middle of the model's box: the file may draw it anywhere. A blank the file already draws around the model stays there (the foundry's allowances where it put them, e.g. only under the part). Unticked, it always stays where the file draws it, in the part's coordinates. The blank is only moved, never turned: if the model sticks out of it (a blank too small, or lying the other way), a message says by how much on which side. The details show the file and where the blank's middle is; **Put in the middle** puts it there later. A right click on the stock in the list opens its menu: **Move stock...** moves the blank along X, Y and Z of the setup, **Put in the middle**, **Custom stock...**, **Stock...**. **Replace by box with allowances** goes back to a box. Simulate and Verify start from the blank's material.
 
 ---
 
@@ -161,9 +161,9 @@ Facing takes the allowance off the top of the whole stock, down to the top face 
 
 ---
 
-## 6. Simulation — Play
+## 6. Simulation — Simulate
 
-Click **Play**. The active setup's program is played as the machine runs it, with the stock cut away live.
+Click **Simulate**. The active setup's program is played as the machine runs it, with the stock cut away live.
 
 ![Simulation window](images/09_play.jpg)
 
@@ -181,7 +181,7 @@ Click **Play**. The active setup's program is played as the machine runs it, wit
 Adaptive roughs out material with an even load on the tool: a small step over and deep cuts. It never cuts into the model.
 
 > **Check that Adaptive works well.** Its window and its Details say so in red: before
-> cutting, look at the path in **Play** or **Verify**. Is everything cleared, does the tool
+> cutting, look at the path in **Simulate** or **Verify**. Is everything cleared, does the tool
 > go only where it should?
 
 1. Click **Adaptive** with nothing selected to clear around the whole model.
@@ -343,10 +343,10 @@ The Setup 2 simulation starts from what Setup 1 left:
 
 | Button | What it does |
 | --- | --- |
-| **Simulate** | The active setup's operations machining its stock. |
+| **Simulate** | The program played as on the machine (section 6). |
 | **Verify** | The active setup's program cut out of its stock: too deep into the part in red, material left in blue, and rapid moves into material. |
 | **Cycle time** | Time of each operation and setup in a table, from the machine's dynamics. |
-| **Play** | The program played as on the machine (section 6). |
+| **FreeCAD sim** | FreeCAD's own simulator: the active setup's operations machining its stock. |
 | **Export NC** | Heidenhain plain language (`.H`), every setup on its own preset. The machine is chosen as the file type of the export window. |
 
 > The **Bridgeport V1000** postprocessor (TNC 620) is made for and tested on that machine. On another machine, check the first programs carefully. It writes a shifted zero point as a datum shift (`CYCL DEF 7`, experimental) and refuses a turned one.

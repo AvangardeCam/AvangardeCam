@@ -1,4 +1,4 @@
-# Simulation GUI test: CAM > Simulate opens FreeCAD's OpenGL simulator for
+# Simulation GUI test: CAM > FreeCAD sim (handlers.simulate) opens FreeCAD's OpenGL simulator for
 # the active setup (its stock, part and contour), without FreeCAD's task
 # panel; the view turns, pans and zooms like AvangardeCam's (middle button,
 # Shift+middle, Ctrl+middle); Play runs it; it closes and opens again;

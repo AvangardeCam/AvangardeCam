@@ -14,9 +14,9 @@ Website: **[avangardecam.eu](https://avangardecam.eu)** (videos, training, rates
 
 > **This is the `experimental` branch.** It adds zero points of operations (Move 0-Point with
 > 5 axes, Set 0-Point as default, Reset 0-Point, Make 0-Point active), a stock with its own
-> zero point, Play and Verify for a tilted tool (5 axes) and a second postprocessor for a
+> zero point, Simulate and Verify for a tilted tool (5 axes) and a second postprocessor for a
 > machine with a turning head. **None of it has run on a machine yet.** Adaptive asks to be
-> checked in Play or Verify before cutting.
+> checked in Simulate or Verify before cutting.
 > The tested version is the [`main`](https://github.com/AvangardeCam/AvangardeCam/tree/main)
 > branch and its releases.
 
@@ -43,7 +43,7 @@ own work better and easier. The code is built for it: small modules, tests, a cl
   Thread milling, Helix milling of holes, Slot milling, Facing, Adaptive clearing,
   Deburring.
 - **Selection like in Blender:** Shift+click add/remove, Ctrl+click shortest path, Alt+click loop.
-- **Simulation:** Play window with the stock removed live and the program line by line,
+- **Simulation:** Simulate window with the stock removed live and the program line by line,
   Verify (stock against the model), collisions of rapid moves, holder and neck.
 - **Cycle time** from the machine's dynamics.
 - **Tool library** with feeds and speeds per material.
@@ -56,7 +56,7 @@ own work better and easier. The code is built for it: small modules, tests, a cl
   point it was made on. **Move 0-Point** moves the zero point (onto a wall, by a distance)
   and with **5 axes** turns it (Z out of a wall, or by angles about X, Y, Z); **Set 0-Point
   as default**, **Reset 0-Point** and **Make 0-Point active** (an operation's menu) go
-  between them; Play, Verify and the cycle time run every operation from its own zero point,
+  between them; Simulate, Verify and the cycle time run every operation from its own zero point,
   the tool tilted as that zero point is. The stock has a zero point of its own (the default
   one) and stays the same block wherever it is typed. One postprocessor for each machine, chosen in the export window: the
   Bridgeport V1000 one writes a shifted zero point as `CYCL DEF 7`, the **Soraluce T35** one

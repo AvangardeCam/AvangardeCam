@@ -156,16 +156,29 @@ def _along(part, sigma, ak, au, av, bk, bu, bv, ray_u, ray_v):
     return hit, -top, -bottom
 
 
-def _lowest(part, dt, du, dv, wu, wv, s0, s1):
+def _lowest(part, dt, du, dv, wu, wv, s0, s1, search=False):
     """The least of f(s) = s * dt + bottom(rho(s)) over [s0, s1], rho(s) =
     |d - s w|: at an end, where rho crosses the radius at an end of a
-    piece, or where the formula of a piece turns."""
+    piece, or where the formula of a piece turns. search: by the golden
+    section search for all (a torus)."""
 
     def f(s):
         return s * dt + part.bottom(np.minimum(np.hypot(du - s * wu, dv - s * wv), part.rmax))
 
-    if _torus(part):
+    if search:
         return _minimum(f, s0, s1)[1]
+    if _torus(part):
+        # under the flat bottom all the way (rho, convex in s, at most
+        # rmin at both ends): f is s * dt + h0, least at an end; the search
+        # only for the rays the corner passes
+        ends = np.minimum(f(s0), f(s1))
+        rho0 = np.hypot(du - s0 * wu, dv - s0 * wv)
+        rho1 = np.hypot(du - s1 * wu, dv - s1 * wv)
+        search = np.maximum(rho0, rho1) > part.rmin
+        if search.any():
+            w = search
+            ends[w] = _lowest(part, dt[w], du[w], dv[w], wu[w], wv[w], s0[w], s1[w], search=True)
+        return ends
     ww = wu * wu + wv * wv
     dw = du * wu + dv * wv
     dd = du * du + dv * dv
@@ -339,8 +352,33 @@ def _at_least(alpha, beta, first, last):
 
 def _across_search(part, pa, va, delta0, vj, height0, dt):
     """Ramps and helices by the golden section search: the ends of the
-    union are the least of a convex function of s."""
+    union are the least of a convex function of s. Only where it is
+    needed: a ray whose height stays on the part's top cylinder for every
+    s sees one disc moved along a line, exact as a move across the tool
+    axis (on a helix nearly all the rays; the search is left for the
+    heights the corner passes), and a ray the part never meets is no hit."""
     sa, sb, in_range = _heights(part, height0, dt)
+    top = part.pieces[-1]
+    if isinstance(top, Line) and top.slope == 0.0:
+        cylinder = (np.minimum(height0, height0 - dt) >= top.h0) & (np.maximum(height0, height0 - dt) <= top.h1)
+        search = in_range & ~cylinder
+        if not search.all():
+            hit = np.zeros(pa.shape, bool)
+            lo = np.full(pa.shape, np.inf)
+            hi = np.full(pa.shape, -np.inf)
+            if cylinder.any():
+                w = cylinder
+                hit[w], lo[w], hi[w] = _across_level(part, pa[w], va[w], delta0[w], vj[w], height0[w], dt[w])
+            if search.any():
+                w = search
+                hit[w], lo[w], hi[w] = _search(part, pa[w], va[w], delta0[w], vj[w], height0[w], dt[w], sa[w], sb[w])
+            return hit, lo, hi
+    hit, lo, hi = _search(part, pa, va, delta0, vj, height0, dt, sa, sb)
+    return in_range & hit, lo, hi
+
+
+def _search(part, pa, va, delta0, vj, height0, dt, sa, sb):
+    """_across_search by the golden section search, on [sa, sb]."""
 
     def radius(s):
         return part.radius(np.clip(height0 - s * dt, part.h0, part.h1))
@@ -352,7 +390,7 @@ def _across_search(part, pa, va, delta0, vj, height0, dt):
         return np.abs(delta(s)) - radius(s)
 
     s_mid, g_mid = _minimum(gap, sa, sb)
-    hit = in_range & (g_mid <= 0.0)
+    hit = g_mid <= 0.0
     s0 = np.where(gap(sa) <= 0.0, sa, _root(gap, s_mid, sa))
     s1 = np.where(gap(sb) <= 0.0, sb, _root(gap, s_mid, sb))
 
