@@ -137,7 +137,7 @@ cat /tmp/ac.txt
   Measure local in the turned setup: the top face's sizes, a Ø4.5 hole (centre, 12 deep,
   through), two holes (30 apart, 25.5 between their nearest points and along Y, overlapping along X, ΔY 30), the front face and a hole (10 to the centre,
   7.75 and 12.25 to its sides).
-- `test_simulation.py`: CAM > Simulate opens FreeCAD's OpenGL simulator for the active
+- `test_simulation.py`: CAM > FreeCAD sim (handlers.simulate) opens FreeCAD's OpenGL simulator for the active
   setup (titled, over the middle of the window), middle button rotates, Shift+middle pans
   with the part following the cursor, Ctrl+middle up zooms in, Play runs it, it closes and
   opens again;
@@ -195,7 +195,7 @@ cat /tmp/ac.txt
   drilling's holes in drilling order (a new drilling from them drills them so), a facing's top face, nothing
   for an adaptive clearing of the whole model; the status bar says what.
 
-- `test_playback.py`: two contours with two tools; CAM > Play opens the simulation in a window of its own
+- `test_playback.py`: two contours with two tools; CAM > Simulate (handlers.play) opens the simulation in a window of its own
   (the project's view untouched); the whole exported program in its list, the whole time the cycle time, the
   stock the whole block and the first TOOL CALL at the start; Right block by block runs lines of the program,
   Left one back, Down/Up by operation (the second's TOOL CALL and tool); a click on a line goes to where that

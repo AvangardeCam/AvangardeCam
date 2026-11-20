@@ -15,7 +15,7 @@ Nazwy przycisków i pól są takie jak w programie (po angielsku).
 3. [Wiercenie z modelu 3D](#3-wiercenie-z-modelu-3d)
 4. [Facing — planowanie](#4-facing--planowanie)
 5. [Lista operacji](#5-lista-operacji)
-6. [Symulacja — Play](#6-symulacja--play)
+6. [Symulacja — Simulate](#6-symulacja--simulate)
 7. [Adaptive clearing](#7-adaptive-clearing)
 8. [Szkic z krawędzi i wybór linii](#8-szkic-z-krawędzi-i-wybór-linii)
 9. [Contour tooling](#9-contour-tooling)
@@ -35,7 +35,7 @@ Nazwy przycisków i pól są takie jak w programie (po angielsku).
   - **Measure:** pomiary;
   - **Milling:** Contour tooling, Facing, Adaptive…;
   - **Holes:** Drilling, Helix, Thread milling;
-  - **Output:** Simulate, Verify, Cycle time, Play, Export NC.
+  - **Output:** Simulate, Verify, Cycle time, FreeCAD sim, Export NC.
 - **Drzewo projektu** (po lewej): Model, Sketches, a w każdym Setupie Stock, Tools i Operations.
 - **Details** (pod drzewem): opis zaznaczonego elementu. Najważniejsze pola można tu zmienić bez otwierania okna.
 - **Widok 3D:** kliknięcie zaznacza ściany, krawędzie i linie szkiców. Czerwona linia to ścieżka narzędzia zaznaczonej operacji.
@@ -139,9 +139,9 @@ Facing zdejmuje naddatek z góry całego stocku, aż do górnej ściany modelu.
 
 ---
 
-## 6. Symulacja — Play
+## 6. Symulacja — Simulate
 
-Kliknij **Play**. Program aktywnego Setupu jest odtwarzany tak, jak wykona go maszyna: materiał ubywa na żywo.
+Kliknij **Simulate**. Program aktywnego Setupu jest odtwarzany tak, jak wykona go maszyna: materiał ubywa na żywo.
 
 ![Okno symulacji](images/09_play.jpg)
 
@@ -317,10 +317,10 @@ Symulacja Setup 2 zaczyna od materiału, który został po Setup 1:
 
 | Przycisk | Co robi |
 | --- | --- |
-| **Simulate** | Operacje aktywnego Setupu obrabiają jego stock. |
+| **Simulate** | Odtwarzanie programu jak na maszynie (rozdział 6). |
 | **Verify** | Program aktywnego Setupu wycięty ze stocku. Na czerwono: za głęboko w detal. Na niebiesko: zostawiony materiał. Pokazuje też szybkie ruchy w materiale. |
 | **Cycle time** | Czas każdej operacji i Setupu w tabeli, liczony z dynamiki maszyny. |
-| **Play** | Odtwarzanie programu jak na maszynie (rozdział 6). |
+| **FreeCAD sim** | Symulator FreeCADa: operacje aktywnego Setupu obrabiają jego stock. |
 | **Export NC** | Program Heidenhain TNC (`.H`) dla każdego Setupu, każdy na własnym presecie. |
 
 > Postprocesor jest zrobiony i sprawdzony na Bridgeport V1000 z TNC 620. Przy innej maszynie dokładnie sprawdź pierwsze programy.

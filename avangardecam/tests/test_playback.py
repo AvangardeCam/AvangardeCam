@@ -336,6 +336,30 @@ class MaterialTest(unittest.TestCase):
         self.assertLess(self.volume(line, side.end_s), self.volume(line, middle) - 5.0 * cell)
         self.assertLess(self.volume(line, middle), self.volume(line, side.start_s) - 5.0 * cell)
 
+    def test_on_against_a_deadline(self):
+        """Cut for no time at all (the player in a hurry), each call stops at
+        the end of a segment past where it was, and on and on it gets to the
+        end: the stock the one cut at once."""
+        line, _ = made()
+        material = playback_stock.Material(line, BOUNDS, TOOLS, self.RESOLUTION)
+        ends = [float(s + d) for s, d in zip(line.starts, line.durations)]
+        calls = 0
+        while material.t < line.total_s - 1e-9:
+            before = material.t
+            material.cut_to(line.total_s, seconds=0.0)
+            calls += 1
+            self.assertGreater(material.t, before)
+            self.assertTrue(any(abs(material.t - e) < 1e-9 for e in ends), material.t)
+        self.assertGreater(calls, 5)
+        whole = playback_stock.fresh_cut(line, BOUNDS, TOOLS, line.total_s, self.RESOLUTION)
+        for a in range(3):  # each ray as much material (their storage may differ)
+            np.testing.assert_allclose(material.stock.rays[a].length(), whole.rays[a].length(), atol=1e-9)
+        # a time it gets to in time: all the way
+        material.cut_to(0.0)
+        material.cut_to(line.total_s * 0.3, seconds=60.0)
+        self.assertEqual(material.t, line.total_s * 0.3)
+        self.assertAlmostEqual(material.volume(), self.volume(line, line.total_s * 0.3), delta=1e-6)
+
     def test_back_from_a_copy(self):
         line, _ = made()
         material = playback_stock.Material(line, BOUNDS, TOOLS, self.RESOLUTION, snapshot_segments=5)

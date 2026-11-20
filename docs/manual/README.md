@@ -13,7 +13,7 @@ two counterbores for screw heads and four M6 holes, machined in two clampings.
 3. [Drilling from the 3D model](#3-drilling-from-the-3d-model)
 4. [Facing](#4-facing)
 5. [The operation list](#5-the-operation-list)
-6. [Simulation — Play](#6-simulation--play)
+6. [Simulation — Simulate](#6-simulation--simulate)
 7. [Adaptive clearing](#7-adaptive-clearing)
 8. [A sketch from the edges and picking lines](#8-a-sketch-from-the-edges-and-picking-lines)
 9. [Contour tooling](#9-contour-tooling)
@@ -33,7 +33,7 @@ two counterbores for screw heads and four M6 holes, machined in two clampings.
   - **Measure:** measuring;
   - **Milling:** Contour tooling, Facing, Adaptive…;
   - **Holes:** Drilling, Helix, Thread milling;
-  - **Output:** Simulate, Verify, Cycle time, Play, Export NC.
+  - **Output:** Simulate, Verify, Cycle time, FreeCAD sim, Export NC.
 - **Project tree** (left): Model, Sketches, and in each Setup its Stock, Tools and Operations.
 - **Details** (under the tree): what the selected item is. The main fields can be changed here without opening its window.
 - **3D view:** a click selects faces, edges and sketch lines. The red line is the tool path of the selected operation.
@@ -137,9 +137,9 @@ Facing takes the allowance off the top of the whole stock, down to the top face 
 
 ---
 
-## 6. Simulation — Play
+## 6. Simulation — Simulate
 
-Click **Play**. The active setup's program is played as the machine runs it, with the stock cut away live.
+Click **Simulate**. The active setup's program is played as the machine runs it, with the stock cut away live.
 
 ![Simulation window](images/09_play.jpg)
 
@@ -315,10 +315,10 @@ The Setup 2 simulation starts from what Setup 1 left:
 
 | Button | What it does |
 | --- | --- |
-| **Simulate** | The active setup's operations machining its stock. |
+| **Simulate** | The program played as on the machine (section 6). |
 | **Verify** | The active setup's program cut out of its stock: too deep into the part in red, material left in blue, and rapid moves into material. |
 | **Cycle time** | Time of each operation and setup in a table, from the machine's dynamics. |
-| **Play** | The program played as on the machine (section 6). |
+| **FreeCAD sim** | FreeCAD's own simulator: the active setup's operations machining its stock. |
 | **Export NC** | Heidenhain TNC plain language (`.H`), every setup on its own preset. |
 
 > The postprocessor is made for and tested on a Bridgeport V1000 with a TNC 620. On another machine, check the first programs carefully.

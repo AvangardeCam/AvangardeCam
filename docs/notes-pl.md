@@ -851,7 +851,7 @@ Jak to działa:
 
 - **Model** (`model/operations.Adaptive`): Z-Depth w układzie mocowania (Z programu, nie od
   szkicu), Start Z (None = góra półfabrykatu), Z step (None = bez kroków), step over w % średnicy (FreeCAD: 20), naddatki XY i Z,
-  kąt helisy (FreeCAD: 5°), podniesienie 0,5 mm, przejście wykańczające wzdłuż ścian
+  kąt helisy (domyślnie 2°, decyzja usera 2026-11-19: bezpieczniej niż 5° FreeCADa), podniesienie 0,5 mm, przejście wykańczające wzdłuż ścian
   (FreeCAD: FinishingProfile). `levels(góra półfabrykatu, dna)`: pełne kroki od Start Z
   (`top_mm`), poziom „dno + naddatek Z” na każdym dnie od Start Z w dół, nie niżej niż Z-Depth i najniższy
   poziom **Z-Depth + naddatek Z** (`bottom_mm`); nic na górze półfabrykatu i wyżej. Naddatek Z
@@ -1919,3 +1919,20 @@ i ucinał podpisy („Nex…tup”, „Snap…oint”, „Ex…NC”). Teraz pod
 linijkach jak we wstążce Office (`ribbon.two_lines`): łamany na spacji, która daje najkrótszą dłuższą
 linijkę; jedno słowo dostaje pustą drugą linijkę, żeby podpisy stały równo. CAM potrzebuje 1876 px.
 Test: `test_layout.py` (żaden przycisk węższy niż jego podpis przy 1920 px).
+
+## 2026-11-19: Simulate = własna symulacja, FreeCAD sim = symulator FreeCADa; helisa 2°; Play bez zacięć
+
+- Decyzja usera: duży przycisk **Simulate** otwiera własną symulację (dawne Play, `handlers.play`,
+  id akcji `cam_play`), mały przycisk w miejscu dawnego Play to **FreeCAD sim** (symulator OpenGL
+  FreeCADa, `handlers.simulate`, id `cam_simulate`). Nazwa „FreeCAD sim” — mój wybór.
+- Adaptive: domyślny kąt helisy 2° (było 5° jak FreeCAD) — decyzja usera, bezpieczniej.
+- Zgłoszenie usera (detal testowy z zaokrągleniem: Adaptive frezem Ø6 R0.2, helisa 2° o promieniu
+  0,74 mm, ~100 półobrotów na 8 mm): symulacja przy Fine i x50 stała 121 s. Dwie przyczyny:
+  (1) stocklab liczył każdy promień poprzeczny i pionowy przy cięciwach helisy złotym podziałem
+  (frez z narożnikiem = torus), choć tylko wysokość narożnika tego wymaga → `sweep._across_search`
+  liczy promienie na walcu wzorem jak ruch poziomy, `sweep._lowest` promienie pod płaskim dnem z
+  końców (zmiana w Labie, skopiowana; Medium 3,7 s → 0,8 s na odcinek); (2) okno cięło stock do
+  czasu odtwarzania bez limitu, a wolne rysowanie wydłużało kolejny odcinek (przy x50 lawina) →
+  `Material.cut_to(t, seconds)` tnie partiami segmentów do terminu, a okno w trakcie grania tnie
+  najwyżej `PLAY_CUT_S` (0,12 s) i gdy nie zdąży, narzędzie czeka na stock (`behind`) — gra wolniej,
+  ale okno nie staje.

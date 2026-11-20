@@ -35,7 +35,7 @@ own work better and easier. The code is built for it: small modules, tests, a cl
   Thread milling, Helix milling of holes, Slot milling, Facing, Adaptive clearing,
   Deburring.
 - **Selection like in Blender:** Shift+click add/remove, Ctrl+click shortest path, Alt+click loop.
-- **Simulation:** Play window with the stock removed live and the program line by line,
+- **Simulation:** Simulate window with the stock removed live and the program line by line,
   Verify (stock against the model), collisions of rapid moves, holder and neck.
 - **Cycle time** from the machine's dynamics.
 - **Tool library** with feeds and speeds per material.

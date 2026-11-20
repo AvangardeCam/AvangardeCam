@@ -472,7 +472,7 @@ class TestOperations(unittest.TestCase):
         self.assertEqual(operations.from_json(operations.to_json(adaptive)), adaptive)
         self.assertEqual(json.loads(operations.to_json(adaptive))["kind"], "adaptive")
         # FreeCAD's step over and helix; 0.5 mm over cleared floor (the user's)
-        self.assertEqual((adaptive.step_over_percent, adaptive.helix_angle_deg, adaptive.lift_mm), (20.0, 5.0, 0.5))
+        self.assertEqual((adaptive.step_over_percent, adaptive.helix_angle_deg, adaptive.lift_mm), (20.0, 2.0, 0.5))
         every = operations.Adaptive(-10.0, 2.0, 12.5, 0.2, 0.1, 3.0, 0.0, False)
         self.assertEqual(operations.from_json(operations.to_json(every.validate())), every)
         self.assertEqual(operations.Adaptive(2.0).validate().z_depth_mm, 2.0, "above the zero point too")

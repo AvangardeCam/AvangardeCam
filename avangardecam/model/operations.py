@@ -458,7 +458,8 @@ class Adaptive:
     finish_xy_mm and finish_z_mm: left on the models' walls and floors;
     finish_z_mm above Z-Depth too (bottom_mm).
     helix_angle_deg: of the helix the tool goes down on into a closed area
-    (in half turns, the user's choice). lift_mm: over cleared floor the
+    (in half turns, the user's choice; 2° by default, the user's choice:
+    safer than FreeCAD's 5°). lift_mm: over cleared floor the
     tool moves rapid this much above the level it cuts (the user's choice:
     0.5 mm). finishing_pass: a last pass along the walls of each area
     (FreeCAD's finishing profile).
@@ -469,7 +470,7 @@ class Adaptive:
     step_over_percent: float = 20.0
     finish_xy_mm: float = 0.0
     finish_z_mm: float = 0.0
-    helix_angle_deg: float = 5.0
+    helix_angle_deg: float = 2.0
     lift_mm: float = LIFT_MM
     finishing_pass: bool = True
     start_z_mm: Optional[float] = None
