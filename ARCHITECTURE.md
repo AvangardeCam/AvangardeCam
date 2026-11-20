@@ -71,6 +71,10 @@ of the scene), so FreeCAD's NaviCube and the Top/Front views are the machine's v
 
 ### Zero points of operations (experimental)
 
+What a version shows is set in `avangardecam/edition.py`: `FIVE_AXES = False` on `main`
+(Move 0-Point shifts only, the export window offers only machines that do not tilt), `True`
+on `experimental`. The code below is the same on both branches.
+
 A setup has a **default zero point** (the machine's preset) and an **active** one, which Move
 0-Point moves away from it (onto a wall, by a typed shift; with 5 axes it turns). **Each
 operation counts from the zero point it was made on and keeps it.** FreeCAD computes a Job

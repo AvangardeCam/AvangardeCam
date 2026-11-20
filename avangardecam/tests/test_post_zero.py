@@ -15,6 +15,7 @@ import unittest
 
 from avangardecam.model import frame, nc
 from avangardecam.model.stock import Bounds
+from avangardecam import edition
 from avangardecam.post import heidenhain, machines, soraluce
 
 MILL = nc.Tool(162, "Face mill 125", 125.0, 500.0, 200.0, 300.0)
@@ -373,6 +374,14 @@ class TestMachines(unittest.TestCase):
         self.assertIn(";SORALUCE T35", machines.SORALUCE_T35.write(flat))
         for post in machines.ALL:
             self.assertEqual(post.module.EXTENSION, ".H")
+
+    def test_choices_follow_the_edition(self):
+        # the export window offers a machine that tilts only with edition.FIVE_AXES
+        if edition.FIVE_AXES:
+            self.assertEqual(machines.CHOICES, machines.ALL)
+        else:
+            self.assertEqual(machines.CHOICES, (machines.BRIDGEPORT_V1000,))
+        self.assertIn(machines.DEFAULT, machines.CHOICES)
 
 
 if __name__ == "__main__":

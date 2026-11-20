@@ -57,25 +57,24 @@ Zero jest domyślnie na górze modelu, pośrodku. Żeby je przenieść:
 - zaznacz płaską ścianę i kliknij **Snap-0-Point**: oś Z wychodzi ze ściany, a X0 Y0 trafia na środek detalu;
 - **Rotate 0-Point 90° / 180° / …** obraca zero wokół osi Z.
 
-#### Przesuwanie zera w obrębie mocowania (eksperymentalne)
+#### Przesuwanie zera w obrębie mocowania
 
-> Ta część jest eksperymentalna: nie była jeszcze puszczona na maszynie. Taki program sprawdź w symulacji sterowania i na sucho.
+> Ta część jest nowa. Pierwsze programy z przesuniętym zerem sprawdź w symulacji sterowania i na sucho.
 
-Zero ustawione przez Snap-0-Point to **domyślny punkt zerowy** mocowania, czyli preset maszyny. **Move 0-Point** odsuwa zero od niego, a **każda operacja zostaje przy zerze, na którym powstała**: operacje zrobione przed przesunięciem zostają bez zmian, nowe liczą się od miejsca, w którym zero zostało. W programie zero każdej operacji jest podane względem domyślnego (przesunięcie punktu zerowego, a przy obróconym zerze także pochylona płaszczyzna).
+Zero ustawione przez Snap-0-Point to **domyślny punkt zerowy** mocowania, czyli preset maszyny. **Move 0-Point** odsuwa zero od niego, a **każda operacja zostaje przy zerze, na którym powstała**: operacje zrobione przed przesunięciem zostają bez zmian, nowe liczą się od miejsca, w którym zero zostało. W programie zero każdej operacji jest podane względem domyślnego (przesunięcie punktu zerowego, `CYCL DEF 7`).
 
 - **Move 0-Point**: w oknie kliknij **Select wall**, a potem płaską ścianę detalu: zero trafia najkrótszą drogą na tę ścianę (ściana prostopadła do X zmienia tylko X; druga ściana dokłada się do pierwszej, więc dwie lub trzy ściany dają narożnik). Możesz też wpisać przesunięcie w polach **Move X / Y / Z**. Widok 3D pokazuje, gdzie zero się znajdzie; **OK** je przesuwa.
-- **5 axes** (pole do zaznaczenia w tym oknie), dla maszyny z pochylaniem: przy zaznaczonym **Z out of the wall** Select wall dodatkowo obraca oś Z zera na zewnątrz ściany, prostopadle do niej, więc narzędzie staje na tej ścianie. Pola **Turn about X / Y / Z** obracają zero o wpisane kąty wokół jego własnych osi (najpierw X, potem Y, potem Z, wokół osi w położeniu sprzed obrotu).
 - **Set 0-Point as default**: obecne zero staje się domyślnym (presetem).
 - **Reset 0-Point**: zero wraca na domyślne.
 - **Make 0-Point active** (prawy klik na operacji): zero przechodzi tam, skąd liczy ta operacja, żeby ją zmienić albo dodać tam kolejne. Operacja z innego zera ma w drzewie dopisek *(other 0-Point)*; **Edit…** na niej najpierw uaktywnia jej zero.
 
 Snap-0-Point i Rotate 0-Point przestawiają całe mocowanie (domyślne zero razem z operacjami, które od niego liczą); używaj ich, gdy zero stoi na domyślnym.
 
-**Stock ma własny punkt zerowy**: domyślny. To jeden blok, gdziekolwiek stoi zero. Możesz go zmieniać na każdym zerze: na zerze obróconym o ćwierć obrotu (ściana bloku) okno Stock pokazuje wymiary i naddatki wzdłuż osi, które widzisz, a to, co wpiszesz, jest przeliczane na zero domyślne. Na zerze pod innym kątem blok nie jest pudełkiem wzdłuż widzianych osi, więc okno Stock pokazuje go wzdłuż własnych osi stocka i to mówi; widok 3D rysuje blok tak, jak leży.
+**Stock ma własny punkt zerowy**: domyślny. To jeden blok, gdziekolwiek stoi zero. Możesz go zmieniać na każdym zerze: to, co wpiszesz w oknie Stock, jest przeliczane na zero domyślne.
 
 Widok 3D, kostka nawigacji i widoki Top / Front / Right zawsze idą za aktywnym zerem.
 
-**Play, Verify i Cycle time** puszczają każdą operację z jej własnego zera: narzędzie jest rysowane pochylone tak jak to zero, stock jest zbierany z tej strony, a Verify sprawdza każdą operację z detalem. Gdy jakaś operacja jest na obróconym zerze, puszczany jest program maszyny z pochylaniem (Play pokazuje listę tego programu); inaczej program maszyny wybranej przy ostatnim eksporcie. Drogi obracanej głowicy między operacjami nie ma w programie, więc nie jest rysowana ani liczona do czasu cyklu.
+**Simulate, Verify i Cycle time** puszczają każdą operację z jej własnego zera, tak jak program.
 
 
 ### Stock
@@ -95,7 +94,7 @@ Zmiany zapisuje **OK**. W przykładzie stock ma 74,20 × 50,22 × 15,20 mm.
 
 ### Custom stock (własny stock z pliku)
 
-Gdy detal robisz z odlewu, ciętego klocka albo surówki obrobionej wcześniej, kliknij **Custom stock** na wstążce (jest też **Custom stock...** w oknie Stock i w Details stocka) i wybierz jego plik STEP, IGES, BREP lub STL. **Put the middle of the stock in the middle of the model** (domyślnie zaznaczone) przesuwa surówkę tak, że środek jej obrysu trafia na środek obrysu modelu — plik może ją rysować gdziekolwiek. Surówka, którą plik już rysuje wokół detalu, zostaje na miejscu (naddatki tam, gdzie dała je odlewnia, np. tylko od spodu). Bez zaznaczenia zawsze zostaje tam, gdzie narysowano ją w pliku (w układzie detalu). Surówka jest tylko przesuwana, nigdy obracana: jeśli model z niej wystaje (za mała albo leży w inną stronę), komunikat mówi, o ile i z której strony. Details pokazują plik i gdzie jest środek surówki; **Put in the middle** ustawia ją na środku później. Prawy klik na Stock w liście otwiera menu: **Move stock...** przesuwa surówkę po osiach X, Y, Z mocowania, **Put in the middle**, **Custom stock...**, **Stock...**. **Replace by box with allowances** wraca do pudełka. Play i Verify zaczynają od materiału surówki.
+Gdy detal robisz z odlewu, ciętego klocka albo surówki obrobionej wcześniej, kliknij **Custom stock** na wstążce (jest też **Custom stock...** w oknie Stock i w Details stocka) i wybierz jego plik STEP, IGES, BREP lub STL. **Put the middle of the stock in the middle of the model** (domyślnie zaznaczone) przesuwa surówkę tak, że środek jej obrysu trafia na środek obrysu modelu — plik może ją rysować gdziekolwiek. Surówka, którą plik już rysuje wokół detalu, zostaje na miejscu (naddatki tam, gdzie dała je odlewnia, np. tylko od spodu). Bez zaznaczenia zawsze zostaje tam, gdzie narysowano ją w pliku (w układzie detalu). Surówka jest tylko przesuwana, nigdy obracana: jeśli model z niej wystaje (za mała albo leży w inną stronę), komunikat mówi, o ile i z której strony. Details pokazują plik i gdzie jest środek surówki; **Put in the middle** ustawia ją na środku później. Prawy klik na Stock w liście otwiera menu: **Move stock...** przesuwa surówkę po osiach X, Y, Z mocowania, **Put in the middle**, **Custom stock...**, **Stock...**. **Replace by box with allowances** wraca do pudełka. Simulate i Verify zaczynają od materiału surówki.
 
 ---
 
@@ -184,7 +183,7 @@ Kliknij **Simulate**. Program aktywnego Setupu jest odtwarzany tak, jak wykona g
 Adaptive usuwa materiał zgrubnie, ze stałym obciążeniem narzędzia: mały odstęp boczny i głębokie przejścia. Nigdy nie wcina się w model.
 
 > **Sprawdź, czy Adaptive działa dobrze.** Okno i Details mówią to na czerwono: przed
-> obróbką obejrzyj ścieżkę w **Play** albo **Verify**. Czy wszystko jest zebrane i czy
+> obróbką obejrzyj ścieżkę w **Simulate** albo **Verify**. Czy wszystko jest zebrane i czy
 > narzędzie jedzie tylko tam, gdzie powinno?
 
 1. Bez zaznaczania niczego kliknij **Adaptive**: obrabiany jest obszar wokół całego modelu.
@@ -349,9 +348,7 @@ Symulacja Setup 2 zaczyna od materiału, który został po Setup 1:
 | **Simulate** | Odtwarzanie programu jak na maszynie (rozdział 6). |
 | **Verify** | Program aktywnego Setupu wycięty ze stocku. Na czerwono: za głęboko w detal. Na niebiesko: zostawiony materiał. Pokazuje też szybkie ruchy w materiale. |
 | **Cycle time** | Czas każdej operacji i Setupu w tabeli, liczony z dynamiki maszyny. |
-| **Play** | Odtwarzanie programu jak na maszynie (rozdział 6). |
-| **Export NC** | Program Heidenhain (`.H`), każdy Setup na własnym presecie. Maszynę wybierasz jako typ pliku w oknie eksportu. |
+| **FreeCAD sim** | Symulator FreeCADa: operacje aktywnego Setupu obrabiają jego stock. |
+| **Export NC** | Program Heidenhain TNC (`.H`) dla każdego Setupu, każdy na własnym presecie. |
 
-> Postprocesor **Bridgeport V1000** (TNC 620) jest zrobiony i sprawdzony na tej maszynie. Przy innej maszynie dokładnie sprawdź pierwsze programy. Przesunięte zero pisze jako przesunięcie punktu zerowego (`CYCL DEF 7`, eksperymentalnie), a obróconego odmawia.
->
-> Postprocesor **Soraluce T35** (obracana głowica) jest eksperymentalny i nie był jeszcze puszczony na maszynie. Każdą operację pisze osobno: etykiety RESET i FREE, wywołanie narzędzia, przesunięcie zera (`CYCL DEF 7`), `PLANE SPATIAL` z kątami zera i cykl głowicy. Programy z jednym kątem (ściana bloku) są wzorowane na programach warsztatu; programy z kilkoma kątami sprawdzaj szczególnie uważnie.
+> Postprocesor jest zrobiony i sprawdzony na Bridgeport V1000 z TNC 620. Przy innej maszynie dokładnie sprawdź pierwsze programy. Przesunięte zero pisze jako przesunięcie punktu zerowego (`CYCL DEF 7`, nowe).

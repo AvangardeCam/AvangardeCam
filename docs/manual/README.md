@@ -55,25 +55,24 @@ The zero point starts on top of the model, in the middle. To move it:
 - select a flat face and click **Snap-0-Point**: Z points out of the face, X0 Y0 lands in the middle of the part;
 - **Rotate 0-Point 90° / 180° / …** turns the zero point about Z.
 
-#### Moving the zero point within a setup (experimental)
+#### Moving the zero point within a setup
 
-> This part is experimental: it has not run on a machine yet. Check such a program on the control's own simulation and with a dry run.
+> This part is new. Check the first programs with a moved zero point on the control's own simulation and with a dry run.
 
-The zero point Snap-0-Point gives is the setup's **default zero point**: the machine's preset. **Move 0-Point** moves the zero point away from it, and **every operation keeps the zero point it was made on**: operations made before the move stay as they are, new ones count from where the zero point was left. In the program each operation's zero point is given from the default one (a datum shift, and a tilted plane when it is turned).
+The zero point Snap-0-Point gives is the setup's **default zero point**: the machine's preset. **Move 0-Point** moves the zero point away from it, and **every operation keeps the zero point it was made on**: operations made before the move stay as they are, new ones count from where the zero point was left. In the program each operation's zero point is given from the default one (a datum shift, `CYCL DEF 7`).
 
 - **Move 0-Point**: in its window click **Select wall**, then a flat face of the part: the zero point goes the shortest way onto that face (a wall square to X changes X only; a second wall adds to the first, so two or three walls give a corner). Or type how far it moves in **Move X / Y / Z**. The 3D view shows where the zero point would be; **OK** moves it.
-- **5 axes** (a tick box in that window), for a machine that tilts: with **Z out of the wall** ticked, Select wall also turns the zero point's Z out of the wall, square to it, so the tool stands on that wall. **Turn about X / Y / Z** turns the zero point by the angles typed, about its own axes (X first, then Y, then Z, about the axes as they stand before the turn).
 - **Set 0-Point as default**: the zero point as it stands becomes the default one (the preset).
 - **Reset 0-Point**: the zero point goes back to the default one.
 - **Make 0-Point active** (right click on an operation): the zero point goes to the one that operation counts from, to change it or to add operations there. An operation on another zero point is marked *(other 0-Point)* in the tree; **Edit…** on it makes its zero point active first.
 
 Snap-0-Point and Rotate 0-Point move the whole setup (its default zero point with the operations on it); use them while the zero point is on the default one.
 
-The **stock has a zero point of its own**: the default one. It is one block, wherever the zero point stands. You can change it on any zero point: on one a quarter turn away (a wall of the block) the Stock window shows its sizes and allowances along the axes you see, and what you type is counted back to the default zero point. On a zero point at an odd angle the block is no box along the axes you see, so the Stock window shows it along the stock's own axes and says so; the 3D view draws the block as it lies.
+The **stock has a zero point of its own**: the default one. It is one block, wherever the zero point stands. You can change it on any zero point: what you type in the Stock window is counted back to the default zero point.
 
 The 3D view, its navigation cube and the Top / Front / Right views always follow the zero point that is active.
 
-**Play, Verify and Cycle time** run every operation from its own zero point: the tool is drawn tilted as that zero point is, the stock is cut from that side, and Verify checks each operation against the part there. When an operation is on a turned zero point they run the program of the machine that tilts (Play lists that program); otherwise the program of the machine chosen in the last export. The way of a turning head between two operations is not in the program, so it is not drawn and not in the cycle time.
+**Simulate, Verify and Cycle time** run every operation from its own zero point, as the program does.
 
 ### Stock
 
@@ -92,7 +91,7 @@ Click **Stock** on the ribbon. The stock is the model's box plus an allowance on
 
 ### Custom stock
 
-When the part is machined from a casting, a sawn block or a blank machined before, click **Custom stock** on the ribbon (also **Custom stock...** in the Stock window and in the stock's details) and choose its STEP, IGES, BREP or STL file. **Put the middle of the stock in the middle of the model** (ticked at first) moves the blank so that the middle of its box is on the middle of the model's box: the file may draw it anywhere. A blank the file already draws around the model stays there (the foundry's allowances where it put them, e.g. only under the part). Unticked, it always stays where the file draws it, in the part's coordinates. The blank is only moved, never turned: if the model sticks out of it (a blank too small, or lying the other way), a message says by how much on which side. The details show the file and where the blank's middle is; **Put in the middle** puts it there later. A right click on the stock in the list opens its menu: **Move stock...** moves the blank along X, Y and Z of the setup, **Put in the middle**, **Custom stock...**, **Stock...**. **Replace by box with allowances** goes back to a box. Play and Verify start from the blank's material.
+When the part is machined from a casting, a sawn block or a blank machined before, click **Custom stock** on the ribbon (also **Custom stock...** in the Stock window and in the stock's details) and choose its STEP, IGES, BREP or STL file. **Put the middle of the stock in the middle of the model** (ticked at first) moves the blank so that the middle of its box is on the middle of the model's box: the file may draw it anywhere. A blank the file already draws around the model stays there (the foundry's allowances where it put them, e.g. only under the part). Unticked, it always stays where the file draws it, in the part's coordinates. The blank is only moved, never turned: if the model sticks out of it (a blank too small, or lying the other way), a message says by how much on which side. The details show the file and where the blank's middle is; **Put in the middle** puts it there later. A right click on the stock in the list opens its menu: **Move stock...** moves the blank along X, Y and Z of the setup, **Put in the middle**, **Custom stock...**, **Stock...**. **Replace by box with allowances** goes back to a box. Simulate and Verify start from the blank's material.
 
 ---
 
@@ -181,7 +180,7 @@ Click **Simulate**. The active setup's program is played as the machine runs it,
 Adaptive roughs out material with an even load on the tool: a small step over and deep cuts. It never cuts into the model.
 
 > **Check that Adaptive works well.** Its window and its Details say so in red: before
-> cutting, look at the path in **Play** or **Verify**. Is everything cleared, does the tool
+> cutting, look at the path in **Simulate** or **Verify**. Is everything cleared, does the tool
 > go only where it should?
 
 1. Click **Adaptive** with nothing selected to clear around the whole model.
@@ -346,9 +345,7 @@ The Setup 2 simulation starts from what Setup 1 left:
 | **Simulate** | The program played as on the machine (section 6). |
 | **Verify** | The active setup's program cut out of its stock: too deep into the part in red, material left in blue, and rapid moves into material. |
 | **Cycle time** | Time of each operation and setup in a table, from the machine's dynamics. |
-| **Play** | The program played as on the machine (section 6). |
-| **Export NC** | Heidenhain plain language (`.H`), every setup on its own preset. The machine is chosen as the file type of the export window. |
+| **FreeCAD sim** | FreeCAD's own simulator: the active setup's operations machining its stock. |
+| **Export NC** | Heidenhain TNC plain language (`.H`), every setup on its own preset. |
 
-> The **Bridgeport V1000** postprocessor (TNC 620) is made for and tested on that machine. On another machine, check the first programs carefully. It writes a shifted zero point as a datum shift (`CYCL DEF 7`, experimental) and refuses a turned one.
->
-> The **Soraluce T35** postprocessor (turning head) is experimental and has not run on the machine yet. It writes every operation on its own: the labels RESET and FREE, the tool call, the datum shift (`CYCL DEF 7`), `PLANE SPATIAL` with the zero point's angles and the head cycle. Programs with one angle (a wall of a block) follow the shop's own programs; check programs with more than one angle with extra care.
+> The postprocessor is made for and tested on a Bridgeport V1000 with a TNC 620. On another machine, check the first programs carefully. A moved zero point is written as a datum shift (`CYCL DEF 7`, new).

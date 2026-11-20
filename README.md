@@ -12,14 +12,6 @@ Website: **[avangardecam.eu](https://avangardecam.eu)** (videos, training, rates
 > **Status: beta.** It is used on real parts, but it is young. Always check the program in
 > the simulation and on the machine (dry run, reduced feed) before cutting.
 
-> **This is the `experimental` branch.** It adds zero points of operations (Move 0-Point with
-> 5 axes, Set 0-Point as default, Reset 0-Point, Make 0-Point active), a stock with its own
-> zero point, Play and Verify for a tilted tool (5 axes) and a second postprocessor for a
-> machine with a turning head. **None of it has run on a machine yet.** Adaptive asks to be
-> checked in Play or Verify before cutting.
-> The tested version is the [`main`](https://github.com/AvangardeCam/AvangardeCam/tree/main)
-> branch and its releases.
-
 ## Why AvangardeCam
 
 **From a CNC programmer, for CNC programmers.** AvangardeCam was made on a shop floor, for
@@ -37,7 +29,8 @@ own work better and easier. The code is built for it: small modules, tests, a cl
 
 - **Setups and zero points:** several setups per part, Snap-0-Point on a face, zero moved onto
   a wall or by a typed distance, rotated around Z, next setup from the stock the previous one leaves.
-- **Stock:** allowances or exact size, the model in the middle.
+- **Stock:** allowances or exact size, the model in the middle, or a custom stock from a file
+  (a casting, a sawn block: STEP, IGES, BREP or STL), moved along the setup's axes.
 - **Operations:** Contour tooling (compensation RL/RR, approach arcs, passes in XY and Z,
   ramps, start/end of the contour), Drilling (cycle 205, depth from the 3D model),
   Thread milling, Helix milling of holes, Slot milling, Facing, Adaptive clearing,
@@ -52,15 +45,13 @@ own work better and easier. The code is built for it: small modules, tests, a cl
   `CYCL DEF 247 REF.PUNT VASTL.`). Other Heidenhain controls (TNC 640, 530, ...) and other
   machines may need changes: the end of tool and park moves (`M91`) are set per machine in
   `avangardecam/post/heidenhain.py`. Check the first programs carefully.
-- **Experimental (this branch, not run on a machine yet):** each operation keeps the zero
-  point it was made on. **Move 0-Point** moves the zero point (onto a wall, by a distance)
-  and with **5 axes** turns it (Z out of a wall, or by angles about X, Y, Z); **Set 0-Point
-  as default**, **Reset 0-Point** and **Make 0-Point active** (an operation's menu) go
-  between them; Play, Verify and the cycle time run every operation from its own zero point,
-  the tool tilted as that zero point is. The stock has a zero point of its own (the default
-  one) and stays the same block wherever it is typed. One postprocessor for each machine, chosen in the export window: the
-  Bridgeport V1000 one writes a shifted zero point as `CYCL DEF 7`, the **Soraluce T35** one
-  (turning head) writes every operation with `CYCL DEF 7`, `PLANE SPATIAL` and the head cycle.
+- **Zero points of operations (new):** each operation keeps the zero point it was made on.
+  **Move 0-Point** moves the zero point (onto a wall, by a distance); **Set 0-Point as
+  default**, **Reset 0-Point** and **Make 0-Point active** (an operation's menu) go between
+  them; Simulate, Verify and the cycle time run every operation from its own zero point. The stock
+  has a zero point of its own (the default one) and stays the same block wherever it is typed.
+  The program gives a moved zero point as a datum shift (`CYCL DEF 7`) from the setup's
+  preset. New: check the first such programs on the control's simulation and with a dry run.
 - **Easy to extend with AI:** add your own functions and write the postprocessor for your
   control with an AI coding assistant (see below).
 
@@ -70,11 +61,6 @@ Needs **FreeCAD 1.1** or newer (Windows, Linux, macOS).
 
 1. Download **[AvangardeCam.zip](https://github.com/AvangardeCam/AvangardeCam/releases/latest/download/AvangardeCam.zip)**
    (the latest release) and unpack it. It contains one folder, `AvangardeCam`.
-
-   The **experimental version** (this branch, not run on a machine yet) is a pre-release of
-   its own: **[AvangardeCam.zip of v0.2.0-experimental](https://github.com/AvangardeCam/AvangardeCam/releases/download/v0.2.0-experimental/AvangardeCam.zip)**.
-   It installs the same way, in place of the tested one (one `AvangardeCam` folder at a time);
-   to go back, put the tested version's folder there again.
 2. Put the `AvangardeCam` folder into FreeCAD's `Mod` folder (create `Mod` if it is not
    there yet):
    - Windows: `%APPDATA%\FreeCAD\v1-1\Mod\`

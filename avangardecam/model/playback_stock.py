@@ -221,7 +221,7 @@ class Material:
                 number = self._tool_of[i]
                 if (number != tool or line.zero_of[i] is not zero) and pending:
                     self._flush(pending, tool, first_pending, zero)
-                    pending = []
+                    pending, weight = [], 0
                 if not pending:
                     first_pending = i
                 tool, zero = number, line.zero_of[i]
@@ -233,14 +233,14 @@ class Material:
             done = b >= 1.0 - _SAME
             if done and (i + 1) % self._every == 0 and (i + 1) not in self._kept:
                 self._flush(pending, tool, first_pending, zero)
-                pending = []
+                pending, weight = [], 0
                 self._kept[i + 1] = self.stock.copy()
             if not done:
                 break
             if deadline is not None and pending and weight >= batch:
                 began = time.monotonic()
                 count = weight
-                self._flush(pending, tool, first_pending)
+                self._flush(pending, tool, first_pending, zero)
                 pending, weight = [], 0
                 now = time.monotonic()
                 end = float(line.starts[i] + line.durations[i])
@@ -250,6 +250,7 @@ class Material:
                 batch = int(min(max((deadline - now) / each / 2.0, 1), 4 * count, _MOST_BATCH))
             i += 1
         self._flush(pending, tool, first_pending, zero)
+        return t1
 
     def _flush(self, pending, tool, first, zero=None):
         """Cut the moves of one tool waiting (counted from zero), all at

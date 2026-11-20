@@ -6,6 +6,7 @@ the programs of another)."""
 
 from typing import NamedTuple
 
+from avangardecam import edition
 from avangardecam.model import machine as model_machine
 from avangardecam.model import tilted
 from avangardecam.post import heidenhain
@@ -42,6 +43,8 @@ SORALUCE_T35 = Postprocessor(
 
 ALL = (BRIDGEPORT_V1000, SORALUCE_T35)
 DEFAULT = BRIDGEPORT_V1000
+# the ones the export window offers: without edition.FIVE_AXES none that tilts
+CHOICES = ALL if edition.FIVE_AXES else tuple(post for post in ALL if not post.tilts)
 
 
 def find(key):
